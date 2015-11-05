@@ -9,6 +9,7 @@
       "Shopify\\": "src/"
     }
   },
+  "license": "MIT",
   "authors": [
     {
       "name": "Daniel Pepin",
