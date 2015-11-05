@@ -58,6 +58,19 @@ class Client {
   private $call_limit;
   private $call_bucket;
 
+  /**
+   * Private app credentials.
+   * See: [your-domain].myshopify.com/admin/apps/private
+   *
+   * @param string $shop_domain
+   *   Shopify domain.
+   * @param string $api_key
+   *   Shopify API Key.
+   * @param string $password
+   *   Shopify API Password.
+   * @param string $shared_secret
+   *   Shopify API Shared Secret.
+   */
   public function __construct($shop_domain, $api_key, $password, $shared_secret) {
     $this->shop_domain = $shop_domain;
     $this->password = $password;
@@ -66,6 +79,19 @@ class Client {
     $this->client = new GuzzleHttp\Client(['base_uri' => $this->getApiUrl()]);
   }
 
+  /**
+   * Makes a request to the Shopify API.
+   *
+   * @param string $method
+   *   HTTP Method, either GET, POST, PUT, DELETE.
+   * @param string $resource
+   *   Shopify resource. Such as shop, products, customers, orders, etc.
+   * @param array $opts
+   *   Options to pass to the request.
+   *
+   * @return \Psr\Http\Message\ResponseInterface
+   *   Returns a Response object.
+   */
   public function request($method, $resource, array $opts = []) {
     if ($this->fetch_as_json) {
       $opts['headers']['Accept'] = 'application/json';
@@ -110,12 +136,40 @@ class Client {
     $this->call_bucket = $limit_parts[1];
   }
 
+  /**
+   * Perform a GET request to the Shopify API.
+   *
+   * @param string $resource
+   *   Shopify resource.
+   * @param array $opts
+   *   Additional options to pass to the request.
+   *
+   * @return object|array
+   *   Returns the Shopify API response JSON decoded.
+   *
+   * @see \Shopify\Client::request()
+   */
   public function get($resource, array $opts = []) {
     return json_decode($this->request('GET', $resource, $opts)
       ->getBody()
       ->getContents());
   }
 
+  /**
+   * Perform a POST request to the Shopify API.
+   *
+   * @param string $resource
+   *   Shopify resource.
+   * @param object|array $data
+   *   Data to JSON encode and send to the API.
+   * @param array $opts
+   *   Additional options to pass to the request.
+   *
+   * @return object|array
+   *   Returns the Shopify API response JSON decoded.
+   *
+   * @see \Shopify\Client::request()
+   */
   public function post($resource, $data, array $opts = []) {
     $opts['json'] = $data;
     return json_decode($this->request('POST', $resource, $opts)
@@ -123,6 +177,21 @@ class Client {
       ->getContents());
   }
 
+  /**
+   * Perform a PUT request to the Shopify API.
+   *
+   * @param string $resource
+   *   Shopify resource.
+   * @param object|array $data
+   *   Data to JSON encode and send to the API.
+   * @param array $opts
+   *   Additional options to pass to the request.
+   *
+   * @return object|array
+   *   Returns the Shopify API response JSON decoded.
+   *
+   * @see \Shopify\Client::request()
+   */
   public function put($resource, $data, array $opts = []) {
     $opts['json'] = $data;
     return json_decode($this->request('PUT', $resource, $opts)
@@ -130,6 +199,19 @@ class Client {
       ->getContents());
   }
 
+  /**
+   * Perform a DELETE request to the Shopify API.
+   *
+   * @param string $resource
+   *   Shopify resource.
+   * @param array $opts
+   *   Additional options to pass to the request.
+   *
+   * @return object|array
+   *   Returns the Shopify API response JSON decoded.
+   *
+   * @see \Shopify\Client::request()
+   */
   public function delete($resource, array $opts = []) {
     return json_decode($this->request('DELETE', $resource, $opts)
       ->getBody()
@@ -156,6 +238,11 @@ class Client {
     return $this->errors;
   }
 
+  /**
+   * Gets the last response object.
+   *
+   * @return \Psr\Http\Message\ResponseInterface
+   */
   public function getLastResponse() {
     return $this->last_response;
   }

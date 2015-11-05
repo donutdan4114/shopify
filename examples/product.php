@@ -4,11 +4,10 @@ namespace Examples;
 use Shopify;
 
 require_once '../vendor/autoload.php';
-require_once '../credentials.php';
 
 //header('Content-Type: application/json');
 
-$client = new Shopify\Client($shop_domain, $api_key, $password, $shared_secret);
+$client = new Shopify\Client(getenv('SHOPIFY_SHOP_DOMAIN'), getenv('SHOPIFY_API_KEY'), getenv('SHOPIFY_PASSWORD'), getenv('SHOPIFY_SHARED_SECRET'));
 
 $result = $client->get('products', ['query' => ['fields' => 'id']]);
 print json_encode($result);
