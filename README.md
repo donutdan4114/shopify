@@ -6,6 +6,11 @@ A simple Shopify PHP SDK for private apps to easily interact with the Shopify AP
 
 **Warning:** Running tests with `phpunit` will modify the connected store, including *deleting all products*. **DO NOT** run tests on a production store.
 
+## Setup/Installation
+Uses [guzzlehttp/guzzle](https://packagist.org/packages/guzzlehttp/guzzle).
+You can include this library by running:  
+`composer require donutdan4114/shopify`
+
 ## Methods
 ### GET
 Get resource information from the API.
