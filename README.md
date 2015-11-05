@@ -75,3 +75,4 @@ You can disabled this with:
 ```php
 $client->rate_limit = FALSE;
 ```
+You can put in your own rate limiting logic using the `$client->getCallLimit()` and `$client->callLimitReached()` methods.
