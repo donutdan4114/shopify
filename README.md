@@ -58,15 +58,37 @@ Easily delete resources with a given ID.
 $client->delete('products/' . $product_id);
 ```
 
-## Error Handling
-Any request that produces an error will set `$client->hasErrors()` to `TRUE`.  
-And will put the errors in `$client->getErrors()` as an array.  
-Example:
+## Simple Wrapper
+To make it easier to work with common API resources, there are several short-hand functions.
 ```php
-$response = $client->put('products/BAD_ID');
-if ($client->hasErrors()){
-  log($client->getErrors();
-  return;
+// Get shop info.
+$shop_info = $client->getShopInfo();
+
+// Get a specific product.
+$product = $client->getProduct($product_id);
+
+// Delete a specific product.
+$client->deleteProduct($product_id);
+
+// Create a product.
+$product = $client->createProduct(['title' => 'my new product']);
+
+// Count products easily.
+$count = $client->getProductsCount(['updated_at_min' => time() - 3600]);
+```
+
+## Error Handling
+Any API error will throw an instance of `Shopify\Exception`.
+```php
+try {
+  $response = $client->put('products/BAD_ID');
+} catch (Shopify\Exception $e) {
+  // Get request errors.
+  log($e->getErrors());
+  // Get last response object.
+  $last_response = $e->getLastResponse();
+  $code = $e->getCode();
+  $code = $last_response->getStatusCode();
 }
 ```
 
