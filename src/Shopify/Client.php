@@ -91,6 +91,8 @@ class Client {
    *
    * @return \Psr\Http\Message\ResponseInterface
    *   Returns a Response object.
+   *
+   * @throws \Shopify\Exception
    */
   public function request($method, $resource, array $opts = []) {
     if ($this->fetch_as_json) {
@@ -109,7 +111,7 @@ class Client {
       $this->has_errors = TRUE;
       $this->errors = json_decode($this->last_response->getBody()
         ->getContents())->errors;
-      return $this->last_response;
+      throw new \Shopify\Exception(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
     }
 
     $this->has_errors = FALSE;
@@ -282,6 +284,89 @@ class Client {
       '{password}' => $this->password,
       '{shop_domain}' => $this->shop_domain,
     ]);
+  }
+
+  // API abstraction functions.
+
+  /**
+   * Gets shop info.
+   *
+   * @param array $fields
+   *   Specific fields to return.
+   *
+   * @return object
+   */
+  public function getShopInfo(array $fields = []) {
+    $opts['query']['fields'] = implode(',', $fields);
+    return $this->get('shop', $opts)->shop;
+  }
+
+  /**
+   * Get a specific product.
+   *
+   * @param int $id
+   *   Product ID.
+   * @param array $fields
+   *   Specific product fields to return.
+   *
+   * @return object
+   */
+  public function getProduct($id, array $fields = []) {
+    $opts['query']['fields'] = implode(',', $fields);
+    return $this->get('products/' . $id, $opts)->product;
+  }
+
+  /**
+   * Count products based on passed filters.
+   *
+   * @param array $filters
+   *   Filters.
+   *
+   * @return int
+   */
+  public function getProductsCount(array $filters = []) {
+    $opts['query'] = $filters;
+    return (int) $this->get('products/count', $opts)->count;
+  }
+
+  /**
+   * Creates a product.
+   *
+   * @param array $product
+   *   A valid Shopify product.
+   *
+   * @return object
+   */
+  public function createProduct(array $product = []) {
+    $data = ['product' => $product];
+    return $this->post('products', $data)->product;
+  }
+
+  /**
+   * Updates a specific product with new params.
+   *
+   * @param int $id
+   *   Product ID.
+   * @param array $update_product
+   *   New product values.
+   *
+   * @return object
+   */
+  public function updateProduct($id, array $update_product = []) {
+    $data['product'] = $update_product;
+    return $this->put('products/' . $id, $data)->product;
+  }
+
+  /**
+   * Deletes a specific product.
+   *
+   * @param int $id
+   *   Product ID to delete.
+   *
+   * @return object
+   */
+  public function deleteProduct($id) {
+    return $this->delete('products/' . $id);
   }
 
 }

@@ -13,43 +13,38 @@ class ProductTest extends PHPUnit_Framework_TestCase {
 
   public function testProductPost() {
     $product = [
-      'product' => [
-        'title' => 'test product 1',
-        'body_html' => 'test product <strong>body html</strong>',
-      ],
+      'title' => 'test product 1',
+      'body_html' => 'test product <strong>body html</strong>',
     ];
-    $response = $this->client->post('products', $product);
+    $product = $this->client->createProduct($product);
     $this->assertFalse($this->client->hasErrors(), 'Client has errors');
-    $product = $response->product;
     $this->assertNotEmpty($product, 'Product response is empty');
     $this->productGet($product->id);
   }
 
   public function testBadProductPost() {
-    $product = ['product' => ['missing_title' => TRUE]];
-    $response = $this->client->post('products', $product);
-    $this->assertTrue($this->client->hasErrors());
-    $this->assertNotEmpty($this->client->getErrors());
-    $this->assertEquals("can't be blank", $this->client->getErrors()->title[0]);
+    $product = ['missing_title' => TRUE];
+    try {
+      $response = $this->client->createProduct($product);
+    } catch (\Shopify\Exception $e) {
+      $this->assertEquals("can't be blank", $e->getErrors()->title[0]);
+    }
   }
 
   public function testProductPut() {
     $product = [
-      'product' => [
-        'title' => 'test product 2',
-      ],
+      'title' => 'test product 2',
     ];
-    $response = $this->client->post('products', $product);
-    $update_product = ['product' => ['title' => 'test product 2 UPDATED']];
-    $response = $this->client->put('products/' . $response->product->id, $update_product);
+    $product = $this->client->createProduct($product);
+    $update_product = ['title' => 'test product 2 UPDATED'];
+    $product = $this->client->updateProduct($product->id, $update_product);
     $this->assertFalse($this->client->hasErrors(), 'Client has errors');
-    $this->assertEquals('test product 2 UPDATED', $response->product->title, 'Product title is not updated');
+    $this->assertEquals('test product 2 UPDATED', $product->title, 'Product title is not updated');
   }
 
   private function productGet($id) {
-    $response = $this->client->get('products/' . $id);
+    $product = $this->client->getProduct($id);
     $this->assertFalse($this->client->hasErrors());
-    $product = $response->product;
     $this->assertNotEmpty($product, 'Product response is empty');
     $this->assertEquals('test product 1', $product->title, 'Product title does not match');
     $this->assertEquals('test product <strong>body html</strong>', $product->body_html, 'Product body_html does not match');
@@ -61,7 +56,7 @@ class ProductTest extends PHPUnit_Framework_TestCase {
   public function testProductDelete() {
     $response = $this->client->get('products', ['query' => ['fields' => 'id']]);
     foreach ($response->products as $product) {
-      $response = $this->client->delete('products/' . $product->id);
+      $response = $this->client->deleteProduct($product->id);
       $this->assertFalse($this->client->hasErrors(), 'Client has errors');
     }
   }
