@@ -4,6 +4,8 @@ A simple Shopify PHP SDK for private apps to easily interact with the Shopify AP
 
 [Shopify API Documentation](https://docs.shopify.com/api)
 
+**Warning:** Running tests with `phpunit` will modify the connected store, including *deleting all products*. **DO NOT** run tests on a production store.
+
 ## Methods
 ### GET
 Get resource information from the API.
