@@ -1,0 +1,18 @@
+{
+  "name": "donutdan4114/shopify",
+  "description": "Shopify PHP SDK to interact with the Shopify API.",
+  "require": {
+    "guzzlehttp/guzzle": "~6.0"
+  },
+  "autoload": {
+    "psr-0": {
+      "Shopify\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Daniel Pepin",
+      "email": "donutdan4114@gmail.com"
+    }
+  ]
+}
