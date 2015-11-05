@@ -17,7 +17,7 @@ object(stdClass)#33 (1) {
   ["shop"]=>
   object(stdClass)#31 (44) {
     ["id"]=>
-    int(10506790)
+    int([YOUR_SHOP_ID])
     ["name"]=>
     string(15) "[YOUR_SHOP_NAME]"
     ["email"]=>
