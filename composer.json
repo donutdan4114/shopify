@@ -2,7 +2,8 @@
   "name": "donutdan4114/shopify",
   "description": "Shopify PHP SDK to interact with the Shopify API.",
   "require": {
-    "guzzlehttp/guzzle": "~6.0"
+    "guzzlehttp/guzzle": "~6.0",
+    "php": ">=5.5.0"
   },
   "autoload": {
     "psr-0": {
