@@ -8,6 +8,13 @@ class ProductTest extends PHPUnit_Framework_TestCase {
   private $client;
 
   public function setUp() {
+    if (!getenv('SHOPIFY_ALLOW_TESTS')) {
+      print 'Shopify tests cannot be run.' . PHP_EOL;
+      print 'Running Shopify tests will delete all connected store info.' . PHP_EOL;
+      print 'Set environment variable SHOPIFY_ALLOW_TESTS=TRUE to allow tests to be run.' . PHP_EOL;
+      print PHP_EOL;
+      exit;
+    }
     $this->client = new Shopify\Client(getenv('SHOPIFY_SHOP_DOMAIN'), getenv('SHOPIFY_API_KEY'), getenv('SHOPIFY_PASSWORD'), getenv('SHOPIFY_SHARED_SECRET'));
   }
 

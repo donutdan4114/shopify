@@ -2,9 +2,7 @@
 A simple Shopify PHP SDK for private apps to easily interact with the Shopify API.  
 [![Travis Build Status](https://travis-ci.org/donutdan4114/shopify.svg?branch=master)](https://travis-ci.org/donutdan4114/shopify)
 
-[Shopify API Documentation](https://docs.shopify.com/api)
-
-**Warning:** Running tests with `phpunit` will modify the connected store, including *deleting all products*. **DO NOT** run tests on a production store.  
+[Shopify API Documentation](https://docs.shopify.com/api)  
 
 Features include:  
 
@@ -137,3 +135,13 @@ You can disabled this with:
 $client->rate_limit = FALSE;
 ```
 You can put in your own rate limiting logic using the `$client->getCallLimit()` and `$client->callLimitReached()` methods.
+
+## Testing
+Tests can be run with `phpunit`.  
+Since the tests actually modify the connected store, you must explicitly allow tests to be run by settings `SHOPIFY_ALLOW_TESTS` environment variable to `TRUE`.  
+Without that, you will be get a message like:
+```
+Shopify tests cannot be run.
+Running Shopify tests will delete all connected store info.
+Set environment variable SHOPIFY_ALLOW_TESTS=TRUE to allow tests to be run.
+```
