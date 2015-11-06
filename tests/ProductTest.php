@@ -66,6 +66,7 @@ class ProductTest extends PHPUnit_Framework_TestCase {
       $response = $this->client->deleteProduct($product->id);
       $this->assertFalse($this->client->hasErrors(), 'Client has errors');
     }
+    $this->assertEquals(0, $this->client->getProductsCount(), 'Not all products were deleted.');
   }
 
   /**
@@ -74,6 +75,28 @@ class ProductTest extends PHPUnit_Framework_TestCase {
   public function testAllProductsDeleted() {
     $response = $this->client->get('products', ['query' => ['fields' => 'id']]);
     $this->assertEmpty($response->products, 'Not all products were deleted');
+  }
+
+  /**
+   * @depends testProductDelete
+   */
+  public function testProductPagination() {
+    for ($i = 1; $i <= 3; $i++) {
+      $this->client->createProduct(['title' => 'test product ' . $i]);
+    }
+    $counter = 1;
+    foreach ($this->client->getResourcePager('products', 1) as $product) {
+      $this->assertNotEmpty($product);
+      $this->assertObjectHasAttribute('title', $product);
+      $this->assertEquals('test product ' . $counter, $product->title);
+      $counter++;
+    }
+    $this->assertEquals(3, $this->client->getProductsCount(), 'There should be 3 products in the system.');
+    foreach ($this->client->getResourcePager('products', 3) as $product) {
+      $this->assertObjectHasAttribute('id', $product);
+      $this->client->deleteProduct($product->id);
+    }
+    $this->assertEquals(0, $this->client->getProductsCount(), 'Not all products were deleted.');
   }
 
 }

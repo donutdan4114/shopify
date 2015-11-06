@@ -36,6 +36,12 @@ class Client {
   public $rate_limit = TRUE;
 
   /**
+   * Default limit number of resources to fetch from Shopify.
+   * @var int
+   */
+  public $default_limit = 50;
+
+  /**
    * Delays the next API call. Set by the rate limiter.
    * @var bool
    */
@@ -310,6 +316,43 @@ class Client {
       }
     }
     return $webhook->getData();
+  }
+
+  /**
+   * Allows you to iterate over paginated resources.
+   * This will return a single resource at a time to the iterator.
+   *
+   * @code
+   * foreach ($client->getResourcePager('products', 5) as $product) {
+   *   // API will fetch 5 products at a time.
+   *   // This will update ALL products in the store.
+   *   $client->updateProduct(['title' => $product->title . ' updated']);
+   * }
+   * @endcode
+   *
+   * @param string $resource
+   *   Shopify resource.
+   * @param int $limit
+   *   Limit resources returned per request. If not set, the default_limit will be used.
+   * @param array $opts
+   *   Additional options to pass to the request. Note: You don't need to set the page/limit.
+   *
+   * @return \Generator
+   */
+  public function getResourcePager($resource, $limit = NULL, array $opts = []) {
+    $current_page = 1;
+    $opts['query']['limit'] = ($limit ?: $this->default_limit);
+    while (TRUE) {
+      $opts['query']['page'] = $current_page;
+      $result = $this->get($resource, $opts);
+      if (empty($result) || empty($result->{$resource})) {
+        break;
+      }
+      foreach ($result->{$resource} as $product) {
+        yield $product;
+      }
+      $current_page++;
+    }
   }
 
   // API abstraction functions.

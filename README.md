@@ -84,6 +84,12 @@ $product = $client->createProduct(['title' => 'my new product']);
 
 // Count products easily.
 $count = $client->getProductsCount(['updated_at_min' => time() - 3600]);
+
+// Easily loop over resources with pagination support (since Shopify can only return 250 items at a time).
+foreach ($this->client->getResourcePager('products', 100) as $product) {
+  // Fetches 100 products at a time.
+  // If you have 500 products, this will create 5 separate requests for you.
+}
 ```
 
 ## Parsing Incoming Webhooks
