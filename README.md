@@ -4,7 +4,13 @@ A simple Shopify PHP SDK for private apps to easily interact with the Shopify AP
 
 [Shopify API Documentation](https://docs.shopify.com/api)
 
-**Warning:** Running tests with `phpunit` will modify the connected store, including *deleting all products*. **DO NOT** run tests on a production store.
+**Warning:** Running tests with `phpunit` will modify the connected store, including *deleting all products*. **DO NOT** run tests on a production store.  
+
+Features include:  
+
+* ability to easily GET, PUT, POST and DELETE resources
+* process and validate incoming webhooks
+* automatic rate limiting to avoid API calls from erroring
 
 ## Setup/Installation
 Uses [guzzlehttp/guzzle](https://packagist.org/packages/guzzlehttp/guzzle).
