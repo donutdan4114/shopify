@@ -82,14 +82,40 @@ $product = $client->createProduct(['title' => 'my new product']);
 $count = $client->getProductsCount(['updated_at_min' => time() - 3600]);
 ```
 
+## Parsing Incoming Webhooks
+If you have a route setup on your site to accept incoming Shopify webhooks, you can easily parse the data and validate the contents.
+There are two ways to validate webhooks: manually, or using the client.
+
+```php
+// Process webhook manually.
+$webhook = new Shopify\IncomingWebhook($SHOPIFY_SHARED_SECRET);
+try {
+  $webhook->validate();
+  $data = $webhook->getData();
+} catch (Shopify\WebhookException $e) {
+  // Errors means you should not process the webhook data.
+  error_log($e->getMessage());
+}
+
+// Process webhook using the $client.
+try {
+  $data = $client->getIncomingWebhook($validate = TRUE);
+} catch (Shopify\ClientException $e) {
+  error_log($e->getMessage());
+}
+if (!empty($data)) {
+  // Do something with the webhook data.
+}
+```
+
 ## Error Handling
-Any API error will throw an instance of `Shopify\Exception`.
+Any API error will throw an instance of `Shopify\ClientException`.
 ```php
 try {
   $response = $client->put('products/BAD_ID');
-} catch (Shopify\Exception $e) {
+} catch (Shopify\ClientException $e) {
   // Get request errors.
-  log($e->getErrors());
+  error_log($e->getErrors());
   // Get last response object.
   $last_response = $e->getLastResponse();
   $code = $e->getCode();

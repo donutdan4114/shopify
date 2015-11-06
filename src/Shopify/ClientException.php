@@ -2,7 +2,7 @@
 
 namespace Shopify;
 
-class Exception extends \Exception {
+class ClientException extends \Exception {
 
   private $client;
 

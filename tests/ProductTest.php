@@ -26,7 +26,7 @@ class ProductTest extends PHPUnit_Framework_TestCase {
     $product = ['missing_title' => TRUE];
     try {
       $response = $this->client->createProduct($product);
-    } catch (\Shopify\Exception $e) {
+    } catch (\Shopify\ClientException $e) {
       $this->assertEquals("can't be blank", $e->getErrors()->title[0]);
     }
   }

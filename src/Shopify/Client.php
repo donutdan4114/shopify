@@ -92,7 +92,7 @@ class Client {
    * @return \Psr\Http\Message\ResponseInterface
    *   Returns a Response object.
    *
-   * @throws \Shopify\Exception
+   * @throws \Shopify\ClientException
    */
   public function request($method, $resource, array $opts = []) {
     if ($this->fetch_as_json) {
@@ -111,7 +111,7 @@ class Client {
       $this->has_errors = TRUE;
       $this->errors = json_decode($this->last_response->getBody()
         ->getContents())->errors;
-      throw new \Shopify\Exception(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
+      throw new ClientException(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
     }
 
     $this->has_errors = FALSE;
@@ -284,6 +284,32 @@ class Client {
       '{password}' => $this->password,
       '{shop_domain}' => $this->shop_domain,
     ]);
+  }
+
+  /**
+   * Parses an incoming webhook and validates it.
+   *
+   * @param bool $validate
+   *   Whether the webhook data should be validated or not.
+   * @param string $data
+   *   JSON data to parse. Data we be pulled from php://input if not provided.
+   * @param string $hmac_header
+   *   Shopify HMAC header. Default will be pulled from $_SERVER.
+   * @return object
+   *   Shopify webhook data.
+   *
+   * @throws \Shopify\ClientException
+   */
+  public function getIncomingWebhook($validate = TRUE, $data = '', $hmac_header = '') {
+    $webhook = new IncomingWebhook($this->shared_secret);
+    if ($validate) {
+      try {
+        $webhook->validate($data, $hmac_header);
+      } catch (WebhookException $e) {
+        throw new ClientException('Invalid webhook: ' . $e->getMessage(), 0, $e, $this);
+      }
+    }
+    return $webhook->getData();
   }
 
   // API abstraction functions.
