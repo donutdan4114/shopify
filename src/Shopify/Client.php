@@ -476,6 +476,19 @@ class Client {
   }
 
   /**
+   * Gets all products matching the filter query
+   *
+   * @param array $opts
+   *   Options to pass to the request.
+   *
+   * @return array
+   *   Array of products.
+   */
+  public function getProducts(array $opts = []) {
+    return $this->getResources('products', $opts);
+  }
+
+  /**
    * Get a specific product.
    *
    * @param int $id

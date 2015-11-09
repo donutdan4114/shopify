@@ -61,8 +61,8 @@ class ProductTest extends PHPUnit_Framework_TestCase {
    * @depends testProductPost
    */
   public function testProductDelete() {
-    $response = $this->client->get('products', ['query' => ['fields' => 'id']]);
-    foreach ($response->products as $product) {
+    $products = $this->client->getProducts(['query' => ['fields' => 'id']]);
+    foreach ($products as $product) {
       $response = $this->client->deleteProduct($product->id);
       $this->assertFalse($this->client->hasErrors(), 'Client has errors');
     }
@@ -73,8 +73,8 @@ class ProductTest extends PHPUnit_Framework_TestCase {
    * @depends testProductDelete
    */
   public function testAllProductsDeleted() {
-    $response = $this->client->get('products', ['query' => ['fields' => 'id']]);
-    $this->assertEmpty($response->products, 'Not all products were deleted');
+    $products = $this->client->getProducts(['query' => ['fields' => 'id']]);
+    $this->assertEmpty($products, 'Not all products were deleted');
   }
 
   /**
@@ -93,7 +93,7 @@ class ProductTest extends PHPUnit_Framework_TestCase {
     }
     $this->assertEquals(10, $this->client->getProductsCount(), 'There should be 10 products in the system.');
     $opts['query']['limit'] = 5;
-    foreach ($this->client->getResources('products', $opts) as $product) {
+    foreach ($this->client->getProducts($opts) as $product) {
       $this->assertObjectHasAttribute('id', $product);
       $this->client->deleteProduct($product->id);
     }

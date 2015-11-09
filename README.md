@@ -85,10 +85,21 @@ $product = $client->createProduct(['title' => 'my new product']);
 // Count products easily.
 $count = $client->getProductsCount(['updated_at_min' => time() - 3600]);
 
-// Easily loop over resources with pagination support (since Shopify can only return 250 items at a time).
-foreach ($this->client->getResourcePager('products', 100) as $product) {
-  // Fetches 100 products at a time.
-  // If you have 500 products, this will create 5 separate requests for you.
+// Easily get all products without having to worry about page limits.
+$products = $client->getProducts();
+// This will fetch all products and will make multiple requests if necessary.
+// You can easily supply filter arguments.
+$products = $client->getProducts(['query' => ['vendor' => 'MY_VENDOR']]);
+
+// For ease-of-use, you should use the getResources() method to automatically handle Shopify's pagination.
+$orders = $client->getResources('orders', ['query' => ['fields' => 'id,billing_address,customer']]);
+// This will ensure that if there are over 250 orders, you get them all returned to you.
+
+// If efficiency and memory limits are a concern,  you can loop over results manually.
+foreach ($this->client->getResourcePager('products', 25) as $product) {
+  // Fetches 25 products at a time.
+  // If you have 500 products, this will create 20 separate requests for you.
+  // PHP memory will only be storing 25 products at a time, which keeps thing memory-efficient.
 }
 ```
 
