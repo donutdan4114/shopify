@@ -40,13 +40,13 @@ class ProductTest extends PHPUnit_Framework_TestCase {
 
   public function testProductPut() {
     $product = [
-      'title' => 'test product 2',
+      'title' => 'test product going to update',
     ];
     $product = $this->client->createProduct($product);
-    $update_product = ['title' => 'test product 2 UPDATED'];
+    $update_product = ['title' => 'test product has been UPDATED'];
     $product = $this->client->updateProduct($product->id, $update_product);
     $this->assertFalse($this->client->hasErrors(), 'Client has errors');
-    $this->assertEquals('test product 2 UPDATED', $product->title, 'Product title is not updated');
+    $this->assertEquals('test product has been UPDATED', $product->title, 'Product title is not updated');
   }
 
   private function productGet($id) {
