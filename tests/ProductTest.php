@@ -81,18 +81,19 @@ class ProductTest extends PHPUnit_Framework_TestCase {
    * @depends testProductDelete
    */
   public function testProductPagination() {
-    for ($i = 1; $i <= 3; $i++) {
+    for ($i = 0; $i <= 9; $i++) {
       $this->client->createProduct(['title' => 'test product ' . $i]);
     }
-    $counter = 1;
-    foreach ($this->client->getResourcePager('products', 1) as $product) {
+    $counter = 0;
+    foreach ($this->client->getResourcePager('products', 5) as $product) {
       $this->assertNotEmpty($product);
       $this->assertObjectHasAttribute('title', $product);
       $this->assertEquals('test product ' . $counter, $product->title);
       $counter++;
     }
-    $this->assertEquals(3, $this->client->getProductsCount(), 'There should be 3 products in the system.');
-    foreach ($this->client->getResourcePager('products', 3) as $product) {
+    $this->assertEquals(10, $this->client->getProductsCount(), 'There should be 10 products in the system.');
+    $opts['query']['limit'] = 5;
+    foreach ($this->client->getResources('products', $opts) as $product) {
       $this->assertObjectHasAttribute('id', $product);
       $this->client->deleteProduct($product->id);
     }
