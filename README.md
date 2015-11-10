@@ -68,7 +68,7 @@ It's at this point, in **dashboard.php** you could starting doing API request by
 ```php
 session_start();
 $client = new Shopify\PublicApp($_SESSION['shopify_shop_domain'], $APP_API_KEY, $APP_SECRET);
-$client->setAccessToken($_SESSION['access_token']);
+$client->setAccessToken($_SESSION['shopify_access_token']);
 $products = $client->getProducts();
 ```
   
