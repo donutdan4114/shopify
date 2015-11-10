@@ -15,11 +15,70 @@ Uses [guzzlehttp/guzzle](https://packagist.org/packages/guzzlehttp/guzzle).
 You can include this library by running:  
 `composer require donutdan4114/shopify`
 
+## Private & Public Apps
+You can use this library for private or public app creation. Using private apps is easier because their is no `access_token` required.
+However, if you want to create a publicly accessible app, you must use the Public App system.
+
+### Private App
+Simply instantiate a private app with the `shop_domain`, `api_key`, `password`, and `shared_secret`.
+```php
+$client = new Shopify\PrivateApp($SHOPIFY_SHOP_DOMAIN, $SHOPIFY_API_KEY, $SHOPIFY_PASSWORD, $SHOPIFY_SHARED_SECRET);
+$result = $client->get('shop');
+```
+### Public App
+You must first setup a public app. [View documentation](https://docs.shopify.com/api/introduction/getting-started).
+You need an authorization URL.
+
+```php
+session_start();
+$client = new Shopify\PublicApp($_GET['shop'], $APP_API_KEY, $APP_SECRET);
+
+// You set a random state that you will confirm later.
+$random_state = 'client-id:' . $_SESSION['client_id'];
+
+$client->authorizeUser('[MY_DOMAIN]/redirect.php', [
+  'read_products',
+  'write_products',
+], $random_state);
+```
+
+At this point, the user is taken to their store to authorize the application to use their information.  
+If the user accepts, they are taken to the redirect URL.
+
+```php
+session_start();
+$client = new Shopify\PublicApp($_GET['shop'], $APP_API_KEY, $APP_SECRET);
+
+// Used to check request data is valid.
+$client->setState('client-id:' . $_SESSION['client_id']);
+
+if ($token = $client->getAccessToken()) {
+  $_SESSION['shopify_access_token'] = $token;
+  $_SESSION['shopify_shop_domain'] = $_GET['shop'];
+  header("Location: dashboard.php");
+}
+else {
+  die('invalid token');
+}
+
+```
+
+It's at this point, in **dashboard.php** you could starting doing API request by setting the `access_token`.
+
+```php
+session_start();
+$client = new Shopify\PublicApp($_SESSION['shopify_shop_domain'], $APP_API_KEY, $APP_SECRET);
+$client->setAccessToken($_SESSION['access_token']);
+$products = $client->getProducts();
+```
+  
+---
+
 ## Methods
 ### GET
 Get resource information from the API.
 ```php
-$client = new Shopify\Client($SHOPIFY_SHOP_DOMAIN, $SHOPIFY_API_KEY, $SHOPIFY_PASSWORD, $SHOPIFY_SHARED_SECRET);
+$client = new Shopify\PrivateApp($SHOPIFY_SHOP_DOMAIN, $SHOPIFY_API_KEY, $SHOPIFY_PASSWORD, $SHOPIFY_SHARED_SECRET);
 $result = $client->get('shop');
 ```
 `$result` is a JSON decoded `stdClass`:

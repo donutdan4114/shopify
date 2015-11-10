@@ -11,7 +11,7 @@ use Psr\Http\Message\ResponseInterface;
  *
  * @package Shopify
  */
-class Client {
+abstract class Client {
 
   /**
    * Shopify API URL format.
@@ -42,47 +42,38 @@ class Client {
   public $default_limit = 50;
 
   /**
+   * Default headers to pass into every request.
+   * @var array
+   */
+  public $default_headers = [];
+
+  /**
    * Delays the next API call. Set by the rate limiter.
    * @var bool
    */
-  private $delay_next_call = FALSE;
+  protected $delay_next_call = FALSE;
+
 
   /**
    * The last response from the API.
    * @var ResponseInterface
    */
-  private $last_response;
+  protected $last_response;
 
-  private $has_errors = FALSE;
-  private $errors = FALSE;
+  protected $has_errors = FALSE;
+  protected $errors = FALSE;
 
-  private $shop_domain;
-  private $password;
-  private $shared_secret;
-  private $api_key;
-  private $client;
-  private $call_limit;
-  private $call_bucket;
+  protected $client_type;
+  protected $shop_domain;
+  protected $password;
+  protected $shared_secret;
+  protected $api_key;
+  protected $client;
+  protected $call_limit;
+  protected $call_bucket;
 
-  /**
-   * Private app credentials.
-   * See: [your-domain].myshopify.com/admin/apps/private
-   *
-   * @param string $shop_domain
-   *   Shopify domain.
-   * @param string $api_key
-   *   Shopify API Key.
-   * @param string $password
-   *   Shopify API Password.
-   * @param string $shared_secret
-   *   Shopify API Shared Secret.
-   */
-  public function __construct($shop_domain, $api_key, $password, $shared_secret) {
-    $this->shop_domain = $shop_domain;
-    $this->password = $password;
-    $this->shared_secret = $shared_secret;
-    $this->api_key = $api_key;
-    $this->client = new GuzzleHttp\Client(['base_uri' => $this->getApiUrl()]);
+  protected function getNewHttpClient(array $opts = []) {
+    return new GuzzleHttp\Client($opts);
   }
 
   /**
@@ -101,9 +92,11 @@ class Client {
    * @throws \Shopify\ClientException
    */
   public function request($method, $resource, array $opts = []) {
-    if ($this->fetch_as_json) {
+    if ($this->fetch_as_json && !isset($opts['headers']['Accept'])) {
       $opts['headers']['Accept'] = 'application/json';
     }
+
+    $opts['headers'] = array_merge($opts['headers'], $this->default_headers);
 
     if ($this->rate_limit && $this->delay_next_call) {
       // Sleep a random amount of time to help prevent bucket overflow.
@@ -138,7 +131,7 @@ class Client {
   /**
    * Sets call limit params from the Shopify header.
    */
-  private function setCallLimitParams() {
+  protected function setCallLimitParams() {
     $limit_parts = explode('/', $this->last_response->getHeader(self::CALL_LIMIT_HEADER)[0]);
     $this->call_limit = $limit_parts[0];
     $this->call_bucket = $limit_parts[1];
@@ -284,7 +277,7 @@ class Client {
    * @return string
    *   API URL.
    */
-  private function getApiUrl() {
+  protected function getApiUrl() {
     return strtr(self::URL_FORMAT, [
       '{api_key}' => $this->api_key,
       '{password}' => $this->password,
@@ -316,6 +309,20 @@ class Client {
       }
     }
     return $webhook->getData();
+  }
+
+  /**
+   * Calculates the HMAC based on Shopify's specification.
+   *
+   * @param string $data
+   *   JSON data.
+   * @param string $secret
+   *   Shopify shared secret.
+   *
+   * @return string
+   */
+  public function calculateHmac($data, $secret) {
+    return hash_hmac('sha256', $data, $secret, TRUE);
   }
 
   /**
