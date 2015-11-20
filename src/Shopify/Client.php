@@ -107,10 +107,15 @@ abstract class Client {
       $this->last_response = $this->client->request($method, $resource . '.json', $opts);
     } catch (GuzzleHttp\Exception\RequestException $e) {
       $this->last_response = $e->getResponse();
-      $this->has_errors = TRUE;
-      $this->errors = json_decode($this->last_response->getBody()
-        ->getContents())->errors;
-      throw new ClientException(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
+      if (!empty($this->last_response)) {
+        $this->has_errors = TRUE;
+        $this->errors = json_decode($this->last_response->getBody()
+          ->getContents())->errors;
+        throw new ClientException(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
+      }
+      else {
+        throw new ClientException('Request failed.', 0, $e, $this);
+      }
     }
 
     $this->has_errors = FALSE;
