@@ -139,9 +139,8 @@ class PublicApp extends Client {
     $original_hmac = $params['hmac'];
     unset($params['hmac']);
     unset($params['signature']);
-    sort($params);
+    ksort($params);
     $data = http_build_query($params);
-    return TRUE; // @todo: Figure out why HMAC isn't working. This should work based on the docs.
     return ($original_hmac === $this->calculateHmac($data, $this->shared_secret));
   }
 
