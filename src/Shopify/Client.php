@@ -365,6 +365,10 @@ abstract class Client {
       foreach ($result->{$resource} as $product) {
         yield $product;
       }
+      if (count($result->{$resource}) < $opts['query']['limit']) {
+        // Passing "page" # to Shopify doesn't always implement pagination.
+        return;
+      }
       $current_page++;
     }
   }
