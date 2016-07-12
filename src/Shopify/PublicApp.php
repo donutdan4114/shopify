@@ -113,6 +113,9 @@ class PublicApp extends Client {
     if (empty($params)) {
       $params = $_GET;
     }
+    if (empty($params['state'])) {
+      $this->state = '';
+    }
     if (!empty($this->state) && $this->state !== $params['state']) {
       return FALSE;
     }
@@ -152,6 +155,7 @@ class PublicApp extends Client {
   public function authorizeUser($redirect_uri, array $scopes, $state) {
     $url = $this->formatAuthorizeUrl($this->shop_domain, $this->api_key, $scopes, $redirect_uri, $state);
     header("Location: $url");
+    return $url;
   }
 
   /**

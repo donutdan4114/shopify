@@ -327,7 +327,7 @@ abstract class Client {
    * @return string
    */
   public function calculateHmac($data, $secret) {
-    return hash_hmac('sha256', $data, $secret, TRUE);
+    return hash_hmac('sha256', $data, $secret, FALSE);
   }
 
   /**
@@ -359,17 +359,22 @@ abstract class Client {
     while (TRUE) {
       $opts['query']['page'] = $current_page;
       $result = $this->get($resource, $opts);
-      if (empty($result) || empty($result->{$resource})) {
+      if (empty($result)) {
         break;
       }
-      foreach ($result->{$resource} as $product) {
-        yield $product;
+      foreach (get_object_vars($result) as $resource_name => $results) {
+        if (empty($results)) {
+          return;
+        }
+        foreach ($results as $object) {
+          yield $object;
+        }
+        if (count($results) < $opts['query']['limit']) {
+          // Passing "page" # to Shopify doesn't always implement pagination.
+          return;
+        }
+        $current_page++;
       }
-      if (count($result->{$resource}) < $opts['query']['limit']) {
-        // Passing "page" # to Shopify doesn't always implement pagination.
-        return;
-      }
-      $current_page++;
     }
   }
 
