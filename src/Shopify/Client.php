@@ -51,7 +51,7 @@ abstract class Client {
    * Delays the next API call. Set by the rate limiter.
    * @var bool
    */
-  protected $delay_next_call = FALSE;
+  protected static $delay_next_call = FALSE;
 
 
   /**
@@ -98,9 +98,9 @@ abstract class Client {
 
     $opts['headers'] = array_merge($opts['headers'], $this->default_headers);
 
-    if ($this->rate_limit && $this->delay_next_call) {
+    if ($this->rate_limit && self::$delay_next_call) {
       // Sleep a random amount of time to help prevent bucket overflow.
-      usleep(rand(1, 3) * 1000000);
+      usleep(rand(3, 10) * 1000000);
     }
 
     try {
@@ -124,10 +124,10 @@ abstract class Client {
     $this->setCallLimitParams();
 
     if ($this->callLimitReached()) {
-      $this->delay_next_call = TRUE;
+      self::$delay_next_call = TRUE;
     }
     else {
-      $this->delay_next_call = FALSE;
+      self::$delay_next_call = FALSE;
     }
 
     return $this->last_response;
@@ -260,7 +260,7 @@ abstract class Client {
    *   Returns TRUE if the call limit has been reached.
    */
   public function callLimitReached() {
-    return $this->getCallLimit() === 1;
+    return $this->getCallLimit() >= 0.8;
   }
 
   /**
