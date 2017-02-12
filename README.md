@@ -221,3 +221,4 @@ Shopify tests cannot be run.
 Running Shopify tests will delete all connected store info.
 Set environment variable SHOPIFY_ALLOW_TESTS=TRUE to allow tests to be run.
 ```
+You can also test the API on [RapidAPI](https://rapidapi.com/package/Shopify/functions?utm_source=ShopifyGitHub&utm_medium=button).
