@@ -1,6 +1,10 @@
 <?php
 
-class ShopTest extends PHPUnit_Framework_TestCase {
+namespace Shopify\Tests;
+
+use PHPUnit\Framework\TestCase;
+
+class ShopTest extends TestCase {
 
   /**
    * @var \Shopify\Client

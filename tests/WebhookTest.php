@@ -1,12 +1,18 @@
 <?php
 
-class WebhookTest extends PHPUnit_Framework_TestCase {
+namespace Shopify\Tests;
+
+use PHPUnit\Framework\TestCase;
+
+class WebhookTest extends TestCase {
 
   /**
    * @var \Shopify\Client
    */
   private $client;
+
   private $data;
+
   private $hmac_header;
 
   public function setUp() {
