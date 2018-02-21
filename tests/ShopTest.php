@@ -3,6 +3,7 @@
 namespace Shopify\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Shopify\PrivateApp;
 
 class ShopTest extends TestCase {
 
@@ -19,7 +20,7 @@ class ShopTest extends TestCase {
       print PHP_EOL;
       exit;
     }
-    $this->client = new Shopify\PrivateApp(getenv('SHOPIFY_SHOP_DOMAIN'), getenv('SHOPIFY_API_KEY'), getenv('SHOPIFY_PASSWORD'), getenv('SHOPIFY_SHARED_SECRET'));
+    $this->client = new PrivateApp(getenv('SHOPIFY_SHOP_DOMAIN'), getenv('SHOPIFY_API_KEY'), getenv('SHOPIFY_PASSWORD'), getenv('SHOPIFY_SHARED_SECRET'));
   }
 
   public function testShopGetInfo() {

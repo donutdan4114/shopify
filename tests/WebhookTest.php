@@ -3,6 +3,7 @@
 namespace Shopify\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Shopify\PrivateApp;
 
 class WebhookTest extends TestCase {
 
@@ -23,7 +24,7 @@ class WebhookTest extends TestCase {
       print PHP_EOL;
       exit;
     }
-    $this->client = new Shopify\PrivateApp(getenv('SHOPIFY_SHOP_DOMAIN'), getenv('SHOPIFY_API_KEY'), getenv('SHOPIFY_PASSWORD'), getenv('SHOPIFY_SHARED_SECRET'));
+    $this->client = new PrivateApp(getenv('SHOPIFY_SHOP_DOMAIN'), getenv('SHOPIFY_API_KEY'), getenv('SHOPIFY_PASSWORD'), getenv('SHOPIFY_SHARED_SECRET'));
     $this->data = '{"test":"this is a test"}';
     $this->hmac_header = base64_encode(hash_hmac('sha256', $this->data, getenv('SHOPIFY_SHARED_SECRET'), TRUE));
   }
