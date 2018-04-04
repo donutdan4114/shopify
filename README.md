@@ -13,7 +13,7 @@ Features include:
 ## Setup/Installation
 Uses [guzzlehttp/guzzle](https://packagist.org/packages/guzzlehttp/guzzle).
 You can include this library by running:  
-`composer require donutdan4114/shopify@dev`
+`composer require donutdan4114/shopify:dev-master`
 
 ## Private & Public Apps
 You can use this library for private or public app creation. Using private apps is easier because their is no `access_token` required.
