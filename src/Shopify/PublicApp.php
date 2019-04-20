@@ -38,13 +38,16 @@ class PublicApp extends Client {
    *   Shopify API Password.
    * @param string $shared_secret
    *   Shopify API Shared Secret.
+   * @param array $opts
+   *   Default options to set.
    */
-  public function __construct($shop_domain, $api_key, $shared_secret) {
+  public function __construct($shop_domain, $api_key, $shared_secret, array $opts = []) {
     $this->shop_domain = $shop_domain;
     $this->shared_secret = $shared_secret;
     $this->api_key = $api_key;
     $this->client_type = 'public';
-    $this->client = $this->getNewHttpClient(['base_uri' => $this->getApiUrl()]);
+    $opts['base_uri'] = $this->getApiUrl();
+    $this->client = $this->getNewHttpClient($opts);
   }
 
   /**

@@ -1,4 +1,5 @@
 <?php
+
 namespace Shopify;
 
 use GuzzleHttp;
@@ -25,30 +26,45 @@ abstract class Client {
 
   /**
    * Fetches data from the API as JSON.
+   *
    * @var bool
    */
   public $fetch_as_json = TRUE;
 
   /**
    * Rate limits API calls so we don't hit Shopify's rate limiter.
+   *
    * @var bool
    */
   public $rate_limit = TRUE;
 
   /**
+   * Set default options.
+   *
+   * @var array
+   */
+  public $default_opts = [
+    'connect_timeout' => 3.0,
+    'timeout' => 3.0,
+  ];
+
+  /**
    * Default limit number of resources to fetch from Shopify.
+   *
    * @var int
    */
   public $default_limit = 250;
 
   /**
    * Default headers to pass into every request.
+   *
    * @var array
    */
   public $default_headers = [];
 
   /**
    * Delays the next API call. Set by the rate limiter.
+   *
    * @var bool
    */
   protected static $delay_next_call = FALSE;
@@ -56,23 +72,41 @@ abstract class Client {
 
   /**
    * The last response from the API.
+   *
    * @var ResponseInterface
    */
   protected $last_response;
 
   protected $has_errors = FALSE;
+
   protected $errors = FALSE;
 
   protected $client_type;
+
   protected $shop_domain;
+
   protected $password;
+
   protected $shared_secret;
+
   protected $api_key;
+
+  /** @var \GuzzleHttp\Client */
   protected $client;
+
   protected $call_limit;
+
   protected $call_bucket;
 
+  /**
+   * Get a new Guzzle Client.
+   *
+   * @param array $opts
+   *
+   * @return \GuzzleHttp\Client
+   */
   protected function getNewHttpClient(array $opts = []) {
+    $this->setDefaultOpts($opts);
     return new GuzzleHttp\Client($opts);
   }
 
@@ -109,8 +143,7 @@ abstract class Client {
       $this->last_response = $e->getResponse();
       if (!empty($this->last_response)) {
         $this->has_errors = TRUE;
-        $this->errors = json_decode($this->last_response->getBody()
-          ->getContents())->errors;
+        $this->errors = json_decode($this->last_response->getBody()->getContents())->errors;
         throw new ClientException(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
       }
       else {
@@ -131,6 +164,19 @@ abstract class Client {
     }
 
     return $this->last_response;
+  }
+
+  /**
+   * Sets the default opts.
+   *
+   * @param array $opts
+   */
+  protected function setDefaultOpts(array &$opts) {
+    foreach ($this->default_opts as $key => $value) {
+      if (!isset($opts[$key])) {
+        $opts[$key] = $value;
+      }
+    }
   }
 
   /**
@@ -299,6 +345,7 @@ abstract class Client {
    *   JSON data to parse. Data we be pulled from php://input if not provided.
    * @param string $hmac_header
    *   Shopify HMAC header. Default will be pulled from $_SERVER.
+   *
    * @return object
    *   Shopify webhook data.
    *
