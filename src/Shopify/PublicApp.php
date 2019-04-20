@@ -6,6 +6,7 @@ use GuzzleHttp\Exception\ClientException;
 
 /**
  * Class PublicApp
+ *
  * @package Shopify
  *
  * Used for creating Public Apps that can be authenticated through the API and
@@ -14,11 +15,15 @@ use GuzzleHttp\Exception\ClientException;
 class PublicApp extends Client {
 
   const AUTHORIZE_URL_FORMAT = 'https://{shop_domain}/admin/oauth/authorize?client_id={api_key}&scope={scopes}&redirect_uri={redirect_uri}&state={state}';
+
   const ACCESS_TOKEN_URL_FORMAT = 'https://{shop_domain}/admin/oauth/access_token';
 
   private $access_token = '';
+
   private $state;
+
   private $code;
+
   private $params;
 
   /**
@@ -148,13 +153,20 @@ class PublicApp extends Client {
   }
 
   /**
+   * Creates the authorization URL and can automatically forward to the URL.
+   *
    * @param array $scopes
    * @param string $redirect_uri
    * @param string $state
+   * @param bool $automatically_redirect
+   *
+   * @return string
    */
-  public function authorizeUser($redirect_uri, array $scopes, $state) {
+  public function authorizeUser($redirect_uri, array $scopes, $state, $automatically_redirect = TRUE) {
     $url = $this->formatAuthorizeUrl($this->shop_domain, $this->api_key, $scopes, $redirect_uri, $state);
-    header("Location: $url");
+    if ($automatically_redirect) {
+      header("Location: $url");
+    }
     return $url;
   }
 

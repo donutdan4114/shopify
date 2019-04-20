@@ -39,7 +39,7 @@ abstract class Client {
    * Default limit number of resources to fetch from Shopify.
    * @var int
    */
-  public $default_limit = 50;
+  public $default_limit = 250;
 
   /**
    * Default headers to pass into every request.
