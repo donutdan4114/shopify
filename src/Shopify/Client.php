@@ -183,9 +183,17 @@ abstract class Client {
    * Sets call limit params from the Shopify header.
    */
   protected function setCallLimitParams() {
-    $limit_parts = explode('/', $this->last_response->getHeader(self::CALL_LIMIT_HEADER)[0]);
-    $this->call_limit = $limit_parts[0];
-    $this->call_bucket = $limit_parts[1];
+      if (!empty($this->last_response->getHeader(self::CALL_LIMIT_HEADER))) {
+          $limit_parts = explode('/', $this->last_response->getHeader(self::CALL_LIMIT_HEADER)[0]);
+          $this->call_limit = $limit_parts[0];
+          $this->call_bucket = $limit_parts[1];
+      } else {
+          $limit_parts = json_decode($this->last_response->getBody()->getContents(), true)['extensions'];
+          $max_available = $limit_parts['cost']['throttleStatus']['maximumAvailable'];
+          $currently_available = $limit_parts['cost']['throttleStatus']['currentlyAvailable'];
+          $this->call_limit = $max_available - $currently_available;
+          $this->call_bucket = $max_available;
+      }
   }
 
   /**
