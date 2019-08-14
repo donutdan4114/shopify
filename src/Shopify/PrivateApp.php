@@ -32,6 +32,12 @@ class PrivateApp extends Client {
     $this->shared_secret = $shared_secret;
     $this->api_key = $api_key;
     $this->client_type = 'private';
+
+    if (isset($opts['version'])) {
+      $this->version = $opts['version'];
+      unset($opts['version']);
+    }
+
     $opts['base_uri'] = $this->getApiUrl();
     $this->client = $this->getNewHttpClient($opts);
   }

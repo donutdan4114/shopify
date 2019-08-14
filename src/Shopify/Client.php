@@ -91,6 +91,8 @@ abstract class Client {
 
   protected $api_key;
 
+  protected $version;
+
   /** @var \GuzzleHttp\Client */
   protected $client;
 
@@ -147,7 +149,7 @@ abstract class Client {
         throw new ClientException(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
       }
       else {
-        throw new ClientException('Request failed.', 0, $e, $this);
+        throw new ClientException('Request failed (' . $this->shop_domain . ':' . $method . ':' . $resource . '):' . print_r($opts, TRUE), 0, $e, $this);
       }
     }
 
@@ -181,11 +183,23 @@ abstract class Client {
 
   /**
    * Sets call limit params from the Shopify header.
+   *
+   * If there is an error and we don't get back a valid response we use defaults.
    */
   protected function setCallLimitParams() {
+    if (empty($this->last_response) || empty($this->last_response->getHeader(self::CALL_LIMIT_HEADER)[0])) {
+      return;
+    }
+
     $limit_parts = explode('/', $this->last_response->getHeader(self::CALL_LIMIT_HEADER)[0]);
-    $this->call_limit = $limit_parts[0];
-    $this->call_bucket = $limit_parts[1];
+    if (isset($limit_parts[0]) && isset($limit_parts[1])) {
+      $this->call_limit = $limit_parts[0];
+      $this->call_bucket = $limit_parts[1];
+    }
+    else {
+      $this->call_limit = 0;
+      $this->call_bucket = 40;
+    }
   }
 
   /**
@@ -319,7 +333,12 @@ abstract class Client {
    *   Call limit as ratio decimal.
    */
   public function getCallLimit() {
-    return $this->call_limit / $this->call_bucket;
+    if ((int) $this->call_bucket > 0) {
+      return $this->call_limit / $this->call_bucket;
+    }
+    else {
+      return 0;
+    }
   }
 
   /**
@@ -329,11 +348,17 @@ abstract class Client {
    *   API URL.
    */
   protected function getApiUrl() {
-    return strtr(self::URL_FORMAT, [
+    $url = strtr(self::URL_FORMAT, [
       '{api_key}' => $this->api_key,
       '{password}' => $this->password,
       '{shop_domain}' => $this->shop_domain,
     ]);
+
+    if (!empty($this->version)) {
+      $url .= 'api/' . $this->version . '/';
+    }
+
+    return $url;
   }
 
   /**
