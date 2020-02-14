@@ -180,11 +180,13 @@ class PaginatedResponse {
    * Set default properties.
    */
   protected function setDefaults() {
-    $link_header = $this->last_response->getHeader('Link')[0];
-    $this->next_page_url = $this->getLinkHeaderUrl($link_header, 'next');
-    $this->prev_page_url = $this->getLinkHeaderUrl($link_header, 'previous');
-    $this->next_page_params = $this->parseUrlParams($this->next_page_url);
-    $this->prev_page_params = $this->parseUrlParams($this->prev_page_url);
+    if ($this->last_response instanceof ResponseInterface && !empty($this->last_response->getHeader('Link')[0])) {
+      $link_header = $this->last_response->getHeader('Link')[0];
+      $this->next_page_url = $this->getLinkHeaderUrl($link_header, 'next');
+      $this->prev_page_url = $this->getLinkHeaderUrl($link_header, 'previous');
+      $this->next_page_params = $this->parseUrlParams($this->next_page_url);
+      $this->prev_page_params = $this->parseUrlParams($this->prev_page_url);
+    }
   }
 
   /**
