@@ -43,14 +43,14 @@ class PaginatedResponse {
   /**
    * The query params for the next page request including the "page_info" param.
    *
-   * @var string
+   * @var array
    */
   private $next_page_params;
 
   /**
    * The query params for the previous page request including the "page_info" param.
    *
-   * @var string
+   * @var array
    */
   private $prev_page_params;
 
@@ -66,28 +66,21 @@ class PaginatedResponse {
    *
    * @var ResponseInterface
    */
-  private $last_response;
-
-  /**
-   * Whether we should be using pagination for the current request.
-   *
-   * The first request does not use pagination. Subsequent requests will need it.
-   *
-   * @var bool
-   */
-  private $cur_page_num = 0;
+  private $response;
 
   /**
    * PaginatedResponse constructor.
    *
-   * @param string $resource
    * @param \Shopify\Client $client
-   * @param \Psr\Http\Message\ResponseInterface $response
+   * @param string $resource
+   * @param array $opts
    */
   public function __construct(Client $client, $resource, array $opts = []) {
     $this->client = $client;
+    $this->response = $client->getLastResponse();
     $this->resource = $resource;
     $this->opts = $opts;
+    $this->setDefaults();
   }
 
   /**
@@ -105,7 +98,7 @@ class PaginatedResponse {
    * @return \Psr\Http\Message\ResponseInterface
    */
   public function getLastResponse() {
-    return $this->last_response;
+    return $this->response;
   }
 
   /**
@@ -114,18 +107,10 @@ class PaginatedResponse {
    * @return array|object
    */
   public function getNextPage() {
-    $opts = $this->opts;
-
-    if ($this->cur_page_num > 0) {
-      // Once we're past the first page we MUST override the query params.
-      $opts['query'] = $this->next_page_params;
-    }
-
     if ($this->hasNextPage()) {
+      $opts = $this->opts;
+      $opts['query'] = $this->next_page_params;
       $result = $this->client->get($this->resource, $opts);
-      $this->last_response = $this->client->getLastResponse();
-      $this->cur_page_num++;
-      $this->setDefaults();
       return $result;
     }
     else {
@@ -140,17 +125,10 @@ class PaginatedResponse {
    */
   public function getPrevPage() {
     $opts = $this->opts;
-
-    if ($this->cur_page_num > 0) {
-      // Once we're past the first page we MUST override the query params.
-      $opts['query'] = $this->prev_page_params;
-    }
+    $opts['query'] = $this->prev_page_params;
 
     if ($this->hasPrevPage()) {
       $result = $this->client->get($this->resource, $opts);
-      $this->last_response = $this->client->getLastResponse();
-      $this->cur_page_num--;
-      $this->setDefaults();
       return $result;
     }
     else {
@@ -164,7 +142,7 @@ class PaginatedResponse {
    * @return bool
    */
   public function hasNextPage() {
-    return !empty($this->next_page_url) || $this->cur_page_num === 0;
+    return !empty($this->next_page_url);
   }
 
   /**
@@ -173,15 +151,33 @@ class PaginatedResponse {
    * @return bool
    */
   public function hasPrevPage() {
-    return !empty($this->prev_page_url) && $this->cur_page_num > 0;
+    return !empty($this->prev_page_url);
+  }
+
+  /**
+   * Get the next page params.
+   *
+   * @return array
+   */
+  public function getNextPageParams() {
+    return $this->next_page_params;
+  }
+
+  /**
+   * Get the previous page params.
+   *
+   * @return array
+   */
+  public function getPrevPageParams() {
+    return $this->prev_page_params;
   }
 
   /**
    * Set default properties.
    */
   protected function setDefaults() {
-    if ($this->last_response instanceof ResponseInterface && !empty($this->last_response->getHeader('Link')[0])) {
-      $link_header = $this->last_response->getHeader('Link')[0];
+    if ($this->response instanceof ResponseInterface && !empty($this->response->getHeader('Link')[0])) {
+      $link_header = $this->response->getHeader('Link')[0];
       $this->next_page_url = $this->getLinkHeaderUrl($link_header, 'next');
       $this->prev_page_url = $this->getLinkHeaderUrl($link_header, 'previous');
       $this->next_page_params = $this->parseUrlParams($this->next_page_url);

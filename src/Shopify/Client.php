@@ -161,6 +161,11 @@ abstract class Client {
   protected $call_bucket;
 
   /**
+   * @var \Shopify\PaginatedResponse
+   */
+  protected $paginated_response;
+
+  /**
    * Get a new Guzzle Client.
    *
    * @param array $opts
@@ -206,6 +211,11 @@ abstract class Client {
 
     try {
       $this->last_response = $this->client->request($method, $resource . '.json', $opts);
+
+      // Add the paginated response.
+      if (strtoupper($method) === 'GET') {
+        $this->paginated_response = new PaginatedResponse($this, $resource, $opts);
+      }
     } catch (GuzzleHttp\Exception\RequestException $e) {
       $this->last_response = $e->getResponse();
       if (!empty($this->last_response)) {
@@ -231,6 +241,88 @@ abstract class Client {
     }
 
     return $this->last_response;
+  }
+
+  /**
+   * Resets the pager for future requests.
+   */
+  public function resetPager() {
+    $this->paginated_response = NULL;
+  }
+
+  /**
+   * Get the PaginatedResponse object from the last request.
+   *
+   * @return \Shopify\PaginatedResponse
+   */
+  public function getPaginatedResponse() {
+    return $this->paginated_response;
+  }
+
+  /**
+   * Check if there is a next page.
+   *
+   * @return bool
+   */
+  public function hasNextPage() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->hasNextPage();
+    }
+  }
+
+  /**
+   * Check if there is a previous page.
+   *
+   * @return bool
+   */
+  public function hasPrevPage() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->hasPrevPage();
+    }
+  }
+
+  /**
+   * Get the next page of results.
+   *
+   * @return array|object
+   */
+  public function getNextPage() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->getNextPage();
+    }
+  }
+
+  /**
+   * Get the previous page of results.
+   *
+   * @return array|object
+   */
+  public function getPrevPage() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->getPrevPage();
+    }
+  }
+
+  /**
+   * Get the next page params.
+   *
+   * @return array
+   */
+  public function getNextPageParams() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->getNextPageParams();
+    }
+  }
+
+  /**
+   * Get the previous page params.
+   *
+   * @return array
+   */
+  public function getPrevPageParams() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->getPrevPageParams();
+    }
   }
 
   /**
@@ -518,12 +610,10 @@ abstract class Client {
       $opts['query']['limit'] = ($limit ?: $this->default_limit);
     }
 
-    $paginated_response = new PaginatedResponse($this, $resource, $opts);
+    // Get the first page of results.
+    $result = $this->get($resource, $opts);
 
-    while (($result = $paginated_response->getNextPage())) {
-      if (empty($result)) {
-        break;
-      }
+    while (!empty($result)) {
       foreach (get_object_vars($result) as $resource_name => $results) {
         if (empty($results)) {
           return;
@@ -532,6 +622,8 @@ abstract class Client {
           yield $object;
         }
       }
+      // Get subsequent pages of results.
+      $result = $this->getNextPage();
     }
   }
 
