@@ -199,6 +199,11 @@ abstract class Client {
       usleep(rand(3, 10) * 1000000);
     }
 
+    if (isset($opts['query']['page'])) {
+      // Log a warning if the page parameter is used.
+      trigger_error('The "page" query parameter is no longer supported in the Shopify API.', E_USER_WARNING);
+    }
+
     try {
       $this->last_response = $this->client->request($method, $resource . '.json', $opts);
     } catch (GuzzleHttp\Exception\RequestException $e) {
@@ -510,13 +515,13 @@ abstract class Client {
    * @return \Generator
    */
   public function getResourcePager($resource, $limit = NULL, array $opts = []) {
-    $current_page = 1;
     if (!isset($opts['query']['limit'])) {
       $opts['query']['limit'] = ($limit ?: $this->default_limit);
     }
-    while (TRUE) {
-      $opts['query']['page'] = $current_page;
-      $result = $this->get($resource, $opts);
+
+    $paginated_response = new PaginatedResponse($this, $resource, $opts);
+
+    while (($result = $paginated_response->getNextPage())) {
       if (empty($result)) {
         break;
       }
@@ -527,11 +532,6 @@ abstract class Client {
         foreach ($results as $object) {
           yield $object;
         }
-        if (count($results) < $opts['query']['limit']) {
-          // Passing "page" # to Shopify doesn't always implement pagination.
-          return;
-        }
-        $current_page++;
       }
     }
   }

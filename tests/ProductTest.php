@@ -96,6 +96,7 @@ class ProductTest extends TestCase {
       $this->assertEquals('test product ' . $counter, $product->title);
       $counter++;
     }
+    $this->assertEquals(10, $counter, 'Resource pager did not return 10 products.');
     $this->assertEquals(10, $this->client->getProductsCount(), 'There should be 10 products in the system.');
     $opts['query']['limit'] = 5;
     foreach ($this->client->getProducts($opts) as $product) {
