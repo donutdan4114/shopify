@@ -41,5 +41,4 @@ class PrivateApp extends Client {
     $opts['base_uri'] = $this->getApiUrl();
     $this->client = $this->getNewHttpClient($opts);
   }
-
 }

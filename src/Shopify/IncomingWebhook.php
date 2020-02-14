@@ -1,4 +1,5 @@
 <?php
+
 namespace Shopify;
 
 /**
@@ -11,7 +12,9 @@ namespace Shopify;
 class IncomingWebhook {
 
   private $data;
+
   private $hmac_header;
+
   private $shared_secret;
 
   /**
@@ -29,7 +32,9 @@ class IncomingWebhook {
    *   Raw JSON incoming data. If not provided $data will be populated from
    *   php://input stream.
    * @param string $hmac_header
-   *   Shopify HMAC header that is sent in the request.
+   *   Shopify HMAC header that is sent in the request. If not provided the HMAC header
+   *   will be populated from the $_SERVER['HTTP_X_SHOPIFY_HMAC_SHA256'] variable.
+   *
    * @return bool
    *   Returns FALSE if there is an error in the data.
    *
@@ -98,5 +103,4 @@ class IncomingWebhook {
   public function getRawData() {
     return $this->data;
   }
-
 }

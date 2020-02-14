@@ -8,7 +8,10 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Class Client
  *
- * Creates a Shopify Client that can interact with the Shopify API.
+ * A Shopify Client that can interact with the Shopify API.
+ *
+ * @see \Shopify\PublicApp
+ * @see \Shopify\PrivateApp
  *
  * @package Shopify
  */
@@ -77,27 +80,84 @@ abstract class Client {
    */
   protected $last_response;
 
+  /**
+   * Whether the response we got back had errors.
+   *
+   * @var bool
+   */
   protected $has_errors = FALSE;
 
-  protected $errors = FALSE;
+  /**
+   * Errors from the last response.
+   *
+   * @var array
+   */
+  protected $errors = [];
 
+  /**
+   * The client type, either "public" or "private".
+   *
+   * @var string
+   */
   protected $client_type;
 
+  /**
+   * The ".myshopify.com" shop domain.
+   *
+   * @var string
+   */
   protected $shop_domain;
 
+  /**
+   * The app password.
+   *
+   * @var string
+   */
   protected $password;
 
+  /**
+   * The app shared secret.
+   *
+   * @var string
+   */
   protected $shared_secret;
 
+  /**
+   * The app API key.
+   *
+   * @var string
+   */
   protected $api_key;
 
-  protected $version;
+  /**
+   * The Shopify API version.
+   *
+   * The version can be overwritten by passing a "version" option
+   * to PublicApp class $opts.
+   *
+   * @var string
+   */
+  protected $version = '2020-01';
 
-  /** @var \GuzzleHttp\Client */
+  /**
+   * The GuzzleHttp Client.
+   *
+   * @var \GuzzleHttp\Client
+   */
   protected $client;
 
+  /**
+   * The current call limit usage.
+   *
+   * @var int
+   */
   protected $call_limit;
 
+  /**
+   * The call bucket size.
+   *
+   * @var int
+   */
   protected $call_bucket;
 
   /**
@@ -145,7 +205,7 @@ abstract class Client {
       $this->last_response = $e->getResponse();
       if (!empty($this->last_response)) {
         $this->has_errors = TRUE;
-        $this->errors = json_decode($this->last_response->getBody()->getContents())->errors;
+        $this->errors = $this->getResponseJsonObjectKey($this->last_response, 'errors');
         throw new ClientException(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
       }
       else {
@@ -166,6 +226,36 @@ abstract class Client {
     }
 
     return $this->last_response;
+  }
+
+  /**
+   * Get the JSON response object.
+   *
+   * @param \Psr\Http\Message\ResponseInterface $response
+   *
+   * @return array|object|null
+   */
+  protected function getResponseJsonObject(ResponseInterface $response) {
+    $contents = $response->getBody()->getContents();
+    $json_response = json_decode($contents);
+    return empty($json_response) ? NULL : $json_response;
+  }
+
+  /**
+   * Get a specific key from the JSON response.
+   *
+   * @param \Psr\Http\Message\ResponseInterface $response
+   * @param string $key
+   *
+   * @return mixed|null
+   */
+  protected function getResponseJsonObjectKey(ResponseInterface $response, $key) {
+    if ($object = $this->getResponseJsonObject($response)) {
+      if (isset($object->{$key})) {
+        return $object->{$key};
+      }
+    }
+    return NULL;
   }
 
   /**
@@ -216,9 +306,8 @@ abstract class Client {
    * @see \Shopify\Client::request()
    */
   public function get($resource, array $opts = []) {
-    return json_decode($this->request('GET', $resource, $opts)
-      ->getBody()
-      ->getContents());
+    $response = $this->request('GET', $resource, $opts);
+    return $this->getResponseJsonObject($response);
   }
 
   /**
@@ -238,9 +327,8 @@ abstract class Client {
    */
   public function post($resource, $data, array $opts = []) {
     $opts['json'] = $data;
-    return json_decode($this->request('POST', $resource, $opts)
-      ->getBody()
-      ->getContents());
+    $response = $this->request('POST', $resource, $opts);
+    return $this->getResponseJsonObject($response);
   }
 
   /**
@@ -260,9 +348,8 @@ abstract class Client {
    */
   public function put($resource, $data, array $opts = []) {
     $opts['json'] = $data;
-    return json_decode($this->request('PUT', $resource, $opts)
-      ->getBody()
-      ->getContents());
+    $response = $this->request('PUT', $resource, $opts);
+    return $this->getResponseJsonObject($response);
   }
 
   /**
@@ -279,9 +366,8 @@ abstract class Client {
    * @see \Shopify\Client::request()
    */
   public function delete($resource, array $opts = []) {
-    return json_decode($this->request('DELETE', $resource, $opts)
-      ->getBody()
-      ->getContents());
+    $response = $this->request('DELETE', $resource, $opts);
+    return $this->getResponseJsonObject($response);
   }
 
   /**

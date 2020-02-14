@@ -191,5 +191,4 @@ class PublicApp extends Client {
       '{state}' => $state,
     ]);
   }
-
 }
