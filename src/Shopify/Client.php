@@ -242,8 +242,7 @@ abstract class Client {
    */
   protected function getResponseJsonObject(ResponseInterface $response) {
     $contents = $response->getBody()->getContents();
-    $json_response = json_decode($contents);
-    return empty($json_response) ? NULL : $json_response;
+    return json_decode($contents);
   }
 
   /**
