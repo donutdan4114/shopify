@@ -1,5 +1,5 @@
 # Shopify PHP SDK
-A simple Shopify PHP SDK for private apps to easily interact with the Shopify API.
+A simple Shopify PHP SDK for private apps to easily interact with the Shopify API.  
 [![Travis Build Status](https://travis-ci.org/donutdan4114/shopify.svg?branch=master)](https://travis-ci.org/donutdan4114/shopify)
 
 [Shopify API Documentation](https://docs.shopify.com/api) | [Packagist](https://packagist.org/packages/donutdan4114/shopify) | [Build Status](https://travis-ci.org/donutdan4114/shopify)
