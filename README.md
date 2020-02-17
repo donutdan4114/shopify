@@ -1,19 +1,53 @@
 # Shopify PHP SDK
-A simple Shopify PHP SDK for private apps to easily interact with the Shopify API.  
+A simple Shopify PHP SDK for private apps to easily interact with the Shopify API.
 [![Travis Build Status](https://travis-ci.org/donutdan4114/shopify.svg?branch=master)](https://travis-ci.org/donutdan4114/shopify)
 
 [Shopify API Documentation](https://docs.shopify.com/api) | [Packagist](https://packagist.org/packages/donutdan4114/shopify) | [Build Status](https://travis-ci.org/donutdan4114/shopify)
 
-Features include:  
+Features include:
 
 * ability to easily GET, PUT, POST and DELETE resources
 * process and validate incoming webhooks
 * automatic rate limiting to avoid API calls from erroring
 
 ## Setup/Installation
-Uses [guzzlehttp/guzzle](https://packagist.org/packages/guzzlehttp/guzzle).
-You can include this library by running:  
-`composer require donutdan4114/shopify@dev`
+Depends on [guzzlehttp/guzzle](https://packagist.org/packages/guzzlehttp/guzzle).
+You can include this library by running:
+`composer require donutdan4114/shopify:2020.01.*`
+
+## API Versions
+This package now includes versions that match Shopify's API version naming convention.
+Version format is `YYYY.MM.V#` where increasing the `V#` will not break backwards compatibility.
+Check the changelog in releases to see what changes may break backwards compatability.
+
+
+## New in Version 2020.01
+This update utilizes the new pagination system in the Shopify API. The `page` query param is no longer supported.
+The "resource pager" which automatically loops through pages will handle this change automatically for you.
+
+If you have custom code using the `page` param you'll need to update your code like:
+```php
+$client = new Shopify\PublicApp(/* $args */);
+
+// Get the first 25 products.
+$result = $client->get('products', ['query' => ['limit' => 25]]);
+
+// If you're paginating in the same request directly after the first API call
+// you can simply use the getNextPage() method.
+if ($client->hasNextPage()){
+  // Get the next 25 products.
+  $result = $client->getNextPage();
+}
+
+// If you're doing multiple page requests or client requests you
+// will need to keep track of the page_info params yourself.
+$page_info = $client->getNextPageParams();
+
+// To get the next page you can now just pass $page_info into the query.
+// This will get the next 25 products ("limit" is automatically set).
+$result = $client->get('products', ['query' => $page_info]);
+```
+
 
 ## Private & Public Apps
 You can use this library for private or public app creation. Using private apps is easier because their is no `access_token` required.
@@ -42,7 +76,7 @@ $client->authorizeUser('[MY_DOMAIN]/redirect.php', [
 ], $random_state);
 ```
 
-At this point, the user is taken to their store to authorize the application to use their information.  
+At this point, the user is taken to their store to authorize the application to use their information.
 If the user accepts, they are taken to the redirect URL.
 
 ```php
@@ -71,7 +105,7 @@ $client = new Shopify\PublicApp($_SESSION['shopify_shop_domain'], $APP_API_KEY, 
 $client->setAccessToken($_SESSION['shopify_access_token']);
 $products = $client->getProducts();
 ```
-  
+
 ---
 
 ## Methods
@@ -146,13 +180,14 @@ $count = $client->getProductsCount(['updated_at_min' => time() - 3600]);
 
 // Easily get all products without having to worry about page limits.
 $products = $client->getProducts();
+
 // This will fetch all products and will make multiple requests if necessary.
 // You can easily supply filter arguments.
 $products = $client->getProducts(['query' => ['vendor' => 'MY_VENDOR']]);
 
 // For ease-of-use, you should use the getResources() method to automatically handle Shopify's pagination.
-$orders = $client->getResources('orders', ['query' => ['fields' => 'id,billing_address,customer']]);
 // This will ensure that if there are over 250 orders, you get them all returned to you.
+$orders = $client->getResources('orders', ['query' => ['fields' => 'id,billing_address,customer']]);
 
 // If efficiency and memory limits are a concern,  you can loop over results manually.
 foreach ($this->client->getResourcePager('products', 25) as $product) {
@@ -204,17 +239,17 @@ try {
 ```
 
 ## API Limit Handling
-This class can handle API rate limiting for you based on Shopify's "leaky bucket" algorithm.  
-It will automatically slow down requests to not hit the rate limiter.  
-You can disabled this with:  
+This class can handle API rate limiting for you based on Shopify's "leaky bucket" algorithm.
+It will automatically slow down requests to not hit the rate limiter.
+You can disabled this with:
 ```php
 $client->rate_limit = FALSE;
 ```
 You can put in your own rate limiting logic using the `$client->getCallLimit()` and `$client->callLimitReached()` methods.
 
 ## Testing
-Tests can be run with `phpunit`.  
-Since the tests actually modify the connected store, you must explicitly allow tests to be run by settings `SHOPIFY_ALLOW_TESTS` environment variable to `TRUE`.  
+Tests can be run with `phpunit`.
+Since the tests actually modify the connected store, you must explicitly allow tests to be run by settings `SHOPIFY_ALLOW_TESTS` environment variable to `TRUE`.
 Without that, you will be get a message like:
 ```
 Shopify tests cannot be run.
