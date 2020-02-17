@@ -28,6 +28,17 @@ abstract class Client {
   const CALL_LIMIT_HEADER = 'http_x_shopify_shop_api_call_limit';
 
   /**
+   * The query params that are allowed when page_info is present in the query.
+   *
+   * @var array
+   */
+  public $allowed_page_info_params = [
+    'page_info',
+    'limit',
+    'fields',
+  ];
+
+  /**
    * Fetches data from the API as JSON.
    *
    * @var bool
@@ -204,6 +215,11 @@ abstract class Client {
       usleep(rand(3, 10) * 1000000);
     }
 
+    if (isset($opts['query']['page_info'])) {
+      // Only some params allowed when page_info isset, so we should remove the other.
+      $this->cleanPageInfoQuery($opts['query']);
+    }
+
     if (isset($opts['query']['page'])) {
       // Log a warning if the page parameter is used.
       trigger_error('The "page" query parameter is no longer supported in the Shopify API.', E_USER_WARNING);
@@ -241,6 +257,19 @@ abstract class Client {
     }
 
     return $this->last_response;
+  }
+
+  /**
+   * Removes query params that are not allowed when page_info is present.
+   *
+   * @param array $query
+   */
+  protected function cleanPageInfoQuery(array &$query) {
+    foreach ($query as $key => $value) {
+      if (!in_array($key, $this->allowed_page_info_params)) {
+        unset($query[$key]);
+      }
+    }
   }
 
   /**
