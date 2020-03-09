@@ -17,7 +17,7 @@ You can include this library by running:
 
 ## API Versions
 This package now includes versions that match Shopify's API version naming convention.
-Version format is `YYYY.MM.V#` where increasing the `V#` will not break backwards compatibility.
+Version format is `vYYYY.MM.V#` where increasing the `V#` will not break backwards compatibility.
 Check the changelog in releases to see what changes may break backwards compatability.
 
 
