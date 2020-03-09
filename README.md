@@ -13,7 +13,7 @@ Features include:
 ## Setup/Installation
 Depends on [guzzlehttp/guzzle](https://packagist.org/packages/guzzlehttp/guzzle).  
 You can include this library by running:  
-`composer require donutdan4114/shopify:2020.01.*`
+`composer require donutdan4114/shopify:v2020.01.*`
 
 ## API Versions
 This package now includes versions that match Shopify's API version naming convention.
