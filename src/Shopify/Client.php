@@ -36,6 +36,7 @@ abstract class Client {
     'page_info',
     'limit',
     'fields',
+    '_apiFeatures'
   ];
 
   /**
