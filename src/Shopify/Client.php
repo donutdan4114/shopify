@@ -635,16 +635,17 @@ abstract class Client {
    * @return \Generator
    */
   public function getResourcePager($resource, $limit = NULL, array $opts = []) {
+    if (isset($opts['query']['limit'])) {
+      $fetch_total = $opts['query']['limit'];
+    }
+
     if (!isset($opts['query']['limit'])) {
       $opts['query']['limit'] = ($limit ?: $this->default_limit);
     }
 
-    $fetch_total = $opts['query']['limit'];
-
     if ($opts['query']['limit'] > 250) {
       // If we are trying to fetch more than 250 items we need to make multiple requests
       // and not return more than what the original limit was.
-      $fetch_total = $opts['query']['limit'];
       $opts['query']['limit'] = 250;
     }
 
@@ -655,7 +656,7 @@ abstract class Client {
 
     while (!empty($result)) {
       foreach (get_object_vars($result) as $resource_name => $results) {
-        if (empty($results) || $returned_count >= $fetch_total) {
+        if (empty($results) || (isset($fetch_total) && $returned_count >= $fetch_total)) {
           return;
         }
         foreach ($results as $object) {
