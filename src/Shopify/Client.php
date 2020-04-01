@@ -639,15 +639,27 @@ abstract class Client {
       $opts['query']['limit'] = ($limit ?: $this->default_limit);
     }
 
+    $fetch_total = $opts['query']['limit'];
+
+    if ($opts['query']['limit'] > 250) {
+      // If we are trying to fetch more than 250 items we need to make multiple requests
+      // and not return more than what the original limit was.
+      $fetch_total = $opts['query']['limit'];
+      $opts['query']['limit'] = 250;
+    }
+
     // Get the first page of results.
     $result = $this->get($resource, $opts);
 
+    $returned_count = 0;
+
     while (!empty($result)) {
       foreach (get_object_vars($result) as $resource_name => $results) {
-        if (empty($results)) {
+        if (empty($results) || $returned_count >= $fetch_total) {
           return;
         }
         foreach ($results as $object) {
+          $returned_count++;
           yield $object;
         }
       }
