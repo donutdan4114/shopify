@@ -12,8 +12,13 @@ Features include:
 
 ## Setup/Installation
 Depends on [guzzlehttp/guzzle](https://packagist.org/packages/guzzlehttp/guzzle).  
-You can include this library by running:  
+Get via Composer...
+
+Get a stable release:  
 `composer require donutdan4114/shopify:v2020.01.*`
+
+Get the latest unstable version:  
+`composer require donutdan4114/shopify:dev-master`
 
 ## API Versions
 This package now includes versions that match Shopify's API version naming convention.
@@ -47,7 +52,6 @@ $page_info = $client->getNextPageParams();
 // This will get the next 25 products ("limit" is automatically set).
 $result = $client->get('products', ['query' => $page_info]);
 ```
-
 
 ## Private & Public Apps
 You can use this library for private or public app creation. Using private apps is easier because their is no `access_token` required.
