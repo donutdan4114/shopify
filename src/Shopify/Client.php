@@ -265,18 +265,19 @@ abstract class Client {
   }
 
   /**
-   * Handle a missing scope exception
+   * Handle a missing scope exception.
    *
    * @param \GuzzleHttp\Exception\RequestException $e
-   * @param \Shopify\Client $client
    *
    * @throws \Shopify\ShopifyMissingScopesException
    */
   private function handleScopeException(GuzzleHttp\Exception\RequestException $e) {
     if (stripos($e->getMessage(), 'requires merchant approval') !== FALSE) {
-      $message = strstr(strstr($e->getMessage(), '[API]'), ' scope.', true);
+      $message = strstr(strstr($e->getMessage(), '[API]'), ' scope.', TRUE);
       $missing_scope = str_replace('[API] This action requires merchant approval for ', '', $message);
-      throw new ShopifyMissingScopesException('Missing required scope', $e->getCode(), $e, $this, [$missing_scope]);
+      if (!(empty($missing_scope))) {
+        throw new ShopifyMissingScopesException('Missing required scope', $e->getCode(), $e, $this, [$missing_scope]);
+      }
     }
   }
 

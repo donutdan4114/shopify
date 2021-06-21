@@ -7,15 +7,25 @@ namespace Shopify;
 
 
 /**
- * Class ShopifyApiScopesException
+ * Class ShopifyMissingScopesException
  *
- * @package Drupal\ta_app\Exception
+ * If a request is made to shopify and api permissions has not been granted, a missing scopes exception will be thrown.
+ *
+ * @package Shopify
  */
 class ShopifyMissingScopesException extends ClientException {
 
   protected $missing_scopes = [];
 
-  // Redefine the exception so message isn't optional
+  /**
+   * ShopifyMissingScopesException constructor.
+   *
+   * @param string $message
+   * @param int $code
+   * @param \Exception|null $previous
+   * @param \Shopify\Client|null $client
+   * @param array $missing_scopes
+   */
   public function __construct($message = '', $code = 0, \Exception $previous = NULL, Client $client = NULL, array $missing_scopes = []) {
     // add our missing scope
     $this->missing_scopes = $missing_scopes;
@@ -24,7 +34,8 @@ class ShopifyMissingScopesException extends ClientException {
   }
 
   /**
-   * Return the missing scopes
+   * Return the missing scopes.
+   *
    * @return array
    */
   public function getMissingScopes() {
