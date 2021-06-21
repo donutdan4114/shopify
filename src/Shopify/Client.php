@@ -233,8 +233,12 @@ abstract class Client {
         $this->paginated_response = new PaginatedResponse($this, $resource, $opts);
       }
     } catch (GuzzleHttp\Exception\RequestException $e) {
+
       $this->last_response = $e->getResponse();
       if (!empty($this->last_response)) {
+
+        $this->handleScopeException($e);
+
         $this->has_errors = TRUE;
         $this->errors = $this->getResponseJsonObjectKey($this->last_response, 'errors');
         throw new ClientException(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
@@ -242,6 +246,7 @@ abstract class Client {
       else {
         throw new ClientException('Request failed (' . $this->shop_domain . ':' . $method . ':' . $resource . '):' . print_r($opts, TRUE), 0, $e, $this);
       }
+
     }
 
     $this->has_errors = FALSE;
@@ -257,6 +262,23 @@ abstract class Client {
     }
 
     return $this->last_response;
+  }
+
+  /**
+   * Handle a missing scope exception.
+   *
+   * @param \GuzzleHttp\Exception\RequestException $e
+   *
+   * @throws \Shopify\ShopifyMissingScopesException
+   */
+  private function handleScopeException(GuzzleHttp\Exception\RequestException $e) {
+    if (stripos($e->getMessage(), 'requires merchant approval') !== FALSE) {
+      $message = strstr(strstr($e->getMessage(), '[API]'), ' scope.', TRUE);
+      $missing_scope = str_replace('[API] This action requires merchant approval for ', '', $message);
+      if (!(empty($missing_scope))) {
+        throw new ShopifyMissingScopesException('Missing required scope', $e->getCode(), $e, $this, [$missing_scope]);
+      }
+    }
   }
 
   /**
