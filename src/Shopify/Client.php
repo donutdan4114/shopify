@@ -1,4 +1,5 @@
 <?php
+
 namespace Shopify;
 
 use GuzzleHttp;
@@ -7,7 +8,10 @@ use Psr\Http\Message\ResponseInterface;
 /**
  * Class Client
  *
- * Creates a Shopify Client that can interact with the Shopify API.
+ * A Shopify Client that can interact with the Shopify API.
+ *
+ * @see \Shopify\PublicApp
+ * @see \Shopify\PrivateApp
  *
  * @package Shopify
  */
@@ -24,31 +28,58 @@ abstract class Client {
   const CALL_LIMIT_HEADER = 'http_x_shopify_shop_api_call_limit';
 
   /**
+   * The query params that are allowed when page_info is present in the query.
+   *
+   * @var array
+   */
+  public $allowed_page_info_params = [
+    'page_info',
+    'limit',
+    'fields',
+    '_apiFeatures'
+  ];
+
+  /**
    * Fetches data from the API as JSON.
+   *
    * @var bool
    */
   public $fetch_as_json = TRUE;
 
   /**
    * Rate limits API calls so we don't hit Shopify's rate limiter.
+   *
    * @var bool
    */
   public $rate_limit = TRUE;
 
   /**
+   * Set default options.
+   *
+   * @var array
+   */
+  public $default_opts = [
+    'connect_timeout' => 3.0,
+    'timeout' => 3.0,
+  ];
+
+  /**
    * Default limit number of resources to fetch from Shopify.
+   *
    * @var int
    */
-  public $default_limit = 50;
+  public $default_limit = 250;
 
   /**
    * Default headers to pass into every request.
+   *
    * @var array
    */
   public $default_headers = [];
 
   /**
    * Delays the next API call. Set by the rate limiter.
+   *
    * @var bool
    */
   protected static $delay_next_call = FALSE;
@@ -56,23 +87,105 @@ abstract class Client {
 
   /**
    * The last response from the API.
+   *
    * @var ResponseInterface
    */
   protected $last_response;
 
+  /**
+   * Whether the response we got back had errors.
+   *
+   * @var bool
+   */
   protected $has_errors = FALSE;
-  protected $errors = FALSE;
 
+  /**
+   * Errors from the last response.
+   *
+   * @var array
+   */
+  protected $errors = [];
+
+  /**
+   * The client type, either "public" or "private".
+   *
+   * @var string
+   */
   protected $client_type;
+
+  /**
+   * The ".myshopify.com" shop domain.
+   *
+   * @var string
+   */
   protected $shop_domain;
+
+  /**
+   * The app password.
+   *
+   * @var string
+   */
   protected $password;
+
+  /**
+   * The app shared secret.
+   *
+   * @var string
+   */
   protected $shared_secret;
+
+  /**
+   * The app API key.
+   *
+   * @var string
+   */
   protected $api_key;
+
+  /**
+   * The Shopify API version.
+   *
+   * The version can be overwritten by passing a "version" option
+   * to PublicApp class $opts.
+   *
+   * @var string
+   */
+  protected $version = '2020-01';
+
+  /**
+   * The GuzzleHttp Client.
+   *
+   * @var \GuzzleHttp\Client
+   */
   protected $client;
+
+  /**
+   * The current call limit usage.
+   *
+   * @var int
+   */
   protected $call_limit;
+
+  /**
+   * The call bucket size.
+   *
+   * @var int
+   */
   protected $call_bucket;
 
+  /**
+   * @var \Shopify\PaginatedResponse
+   */
+  protected $paginated_response;
+
+  /**
+   * Get a new Guzzle Client.
+   *
+   * @param array $opts
+   *
+   * @return \GuzzleHttp\Client
+   */
   protected function getNewHttpClient(array $opts = []) {
+    $this->setDefaultOpts($opts);
     return new GuzzleHttp\Client($opts);
   }
 
@@ -103,19 +216,38 @@ abstract class Client {
       usleep(rand(3, 10) * 1000000);
     }
 
+    if (isset($opts['query']['page_info'])) {
+      // Only some params allowed when page_info isset, so we should remove the other.
+      $this->cleanPageInfoQuery($opts['query']);
+    }
+
+    if (isset($opts['query']['page'])) {
+      // Log a warning if the page parameter is used.
+      trigger_error('The "page" query parameter is no longer supported in the Shopify API.', E_USER_WARNING);
+    }
+
     try {
       $this->last_response = $this->client->request($method, $resource . '.json', $opts);
+
+      // Add the paginated response.
+      if (strtoupper($method) === 'GET') {
+        $this->paginated_response = new PaginatedResponse($this, $resource, $opts);
+      }
     } catch (GuzzleHttp\Exception\RequestException $e) {
+
       $this->last_response = $e->getResponse();
       if (!empty($this->last_response)) {
+
+        $this->handleScopeException($e);
+
         $this->has_errors = TRUE;
-        $this->errors = json_decode($this->last_response->getBody()
-          ->getContents())->errors;
+        $this->errors = $this->getResponseJsonObjectKey($this->last_response, 'errors');
         throw new ClientException(print_r($this->errors, TRUE), $this->last_response->getStatusCode(), $e, $this);
       }
       else {
-        throw new ClientException('Request failed.', 0, $e, $this);
+        throw new ClientException('Request failed (' . $this->shop_domain . ':' . $method . ':' . $resource . '):' . print_r($opts, TRUE), 0, $e, $this);
       }
+
     }
 
     $this->has_errors = FALSE;
@@ -134,12 +266,178 @@ abstract class Client {
   }
 
   /**
+   * Handle a missing scope exception.
+   *
+   * @param \GuzzleHttp\Exception\RequestException $e
+   *
+   * @throws \Shopify\ShopifyMissingScopesException
+   */
+  private function handleScopeException(GuzzleHttp\Exception\RequestException $e) {
+    if (stripos($e->getMessage(), 'requires merchant approval') !== FALSE) {
+      $message = strstr(strstr($e->getMessage(), '[API]'), ' scope.', TRUE);
+      $missing_scope = str_replace('[API] This action requires merchant approval for ', '', $message);
+      if (!(empty($missing_scope))) {
+        throw new ShopifyMissingScopesException('Missing required scope', $e->getCode(), $e, $this, [$missing_scope]);
+      }
+    }
+  }
+
+  /**
+   * Removes query params that are not allowed when page_info is present.
+   *
+   * @param array $query
+   */
+  protected function cleanPageInfoQuery(array &$query) {
+    foreach ($query as $key => $value) {
+      if (!in_array($key, $this->allowed_page_info_params)) {
+        unset($query[$key]);
+      }
+    }
+  }
+
+  /**
+   * Resets the pager for future requests.
+   */
+  public function resetPager() {
+    $this->paginated_response = NULL;
+  }
+
+  /**
+   * Get the PaginatedResponse object from the last request.
+   *
+   * @return \Shopify\PaginatedResponse
+   */
+  public function getPaginatedResponse() {
+    return $this->paginated_response;
+  }
+
+  /**
+   * Check if there is a next page.
+   *
+   * @return bool
+   */
+  public function hasNextPage() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->hasNextPage();
+    }
+  }
+
+  /**
+   * Check if there is a previous page.
+   *
+   * @return bool
+   */
+  public function hasPrevPage() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->hasPrevPage();
+    }
+  }
+
+  /**
+   * Get the next page of results.
+   *
+   * @return array|object
+   */
+  public function getNextPage() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->getNextPage();
+    }
+  }
+
+  /**
+   * Get the previous page of results.
+   *
+   * @return array|object
+   */
+  public function getPrevPage() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->getPrevPage();
+    }
+  }
+
+  /**
+   * Get the next page params.
+   *
+   * @return array
+   */
+  public function getNextPageParams() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->getNextPageParams();
+    }
+  }
+
+  /**
+   * Get the previous page params.
+   *
+   * @return array
+   */
+  public function getPrevPageParams() {
+    if ($this->paginated_response instanceof PaginatedResponse) {
+      return $this->paginated_response->getPrevPageParams();
+    }
+  }
+
+  /**
+   * Get the JSON response object.
+   *
+   * @param \Psr\Http\Message\ResponseInterface $response
+   *
+   * @return array|object|null
+   */
+  protected function getResponseJsonObject(ResponseInterface $response) {
+    $contents = $response->getBody()->getContents();
+    return json_decode($contents);
+  }
+
+  /**
+   * Get a specific key from the JSON response.
+   *
+   * @param \Psr\Http\Message\ResponseInterface $response
+   * @param string $key
+   *
+   * @return mixed|null
+   */
+  protected function getResponseJsonObjectKey(ResponseInterface $response, $key) {
+    if ($object = $this->getResponseJsonObject($response)) {
+      if (isset($object->{$key})) {
+        return $object->{$key};
+      }
+    }
+    return NULL;
+  }
+
+  /**
+   * Sets the default opts.
+   *
+   * @param array $opts
+   */
+  protected function setDefaultOpts(array &$opts) {
+    foreach ($this->default_opts as $key => $value) {
+      if (!isset($opts[$key])) {
+        $opts[$key] = $value;
+      }
+    }
+  }
+
+  /**
    * Sets call limit params from the Shopify header.
+   *
+   * If there is an error and we don't get back a valid response we use defaults.
    */
   protected function setCallLimitParams() {
+    if (empty($this->last_response) || empty($this->last_response->getHeader(self::CALL_LIMIT_HEADER)[0])) {
+      return;
+    }
+
     $limit_parts = explode('/', $this->last_response->getHeader(self::CALL_LIMIT_HEADER)[0]);
-    $this->call_limit = $limit_parts[0];
-    $this->call_bucket = $limit_parts[1];
+    if (isset($limit_parts[0]) && isset($limit_parts[1])) {
+      $this->call_limit = $limit_parts[0];
+      $this->call_bucket = $limit_parts[1];
+    }
+    else {
+      $this->call_limit = 0;
+      $this->call_bucket = 40;
+    }
   }
 
   /**
@@ -156,9 +454,8 @@ abstract class Client {
    * @see \Shopify\Client::request()
    */
   public function get($resource, array $opts = []) {
-    return json_decode($this->request('GET', $resource, $opts)
-      ->getBody()
-      ->getContents());
+    $response = $this->request('GET', $resource, $opts);
+    return $this->getResponseJsonObject($response);
   }
 
   /**
@@ -178,9 +475,8 @@ abstract class Client {
    */
   public function post($resource, $data, array $opts = []) {
     $opts['json'] = $data;
-    return json_decode($this->request('POST', $resource, $opts)
-      ->getBody()
-      ->getContents());
+    $response = $this->request('POST', $resource, $opts);
+    return $this->getResponseJsonObject($response);
   }
 
   /**
@@ -200,9 +496,8 @@ abstract class Client {
    */
   public function put($resource, $data, array $opts = []) {
     $opts['json'] = $data;
-    return json_decode($this->request('PUT', $resource, $opts)
-      ->getBody()
-      ->getContents());
+    $response = $this->request('PUT', $resource, $opts);
+    return $this->getResponseJsonObject($response);
   }
 
   /**
@@ -219,9 +514,8 @@ abstract class Client {
    * @see \Shopify\Client::request()
    */
   public function delete($resource, array $opts = []) {
-    return json_decode($this->request('DELETE', $resource, $opts)
-      ->getBody()
-      ->getContents());
+    $response = $this->request('DELETE', $resource, $opts);
+    return $this->getResponseJsonObject($response);
   }
 
   /**
@@ -273,7 +567,12 @@ abstract class Client {
    *   Call limit as ratio decimal.
    */
   public function getCallLimit() {
-    return $this->call_limit / $this->call_bucket;
+    if ((int) $this->call_bucket > 0) {
+      return $this->call_limit / $this->call_bucket;
+    }
+    else {
+      return 0;
+    }
   }
 
   /**
@@ -283,11 +582,17 @@ abstract class Client {
    *   API URL.
    */
   protected function getApiUrl() {
-    return strtr(self::URL_FORMAT, [
+    $url = strtr(self::URL_FORMAT, [
       '{api_key}' => $this->api_key,
       '{password}' => $this->password,
       '{shop_domain}' => $this->shop_domain,
     ]);
+
+    if (!empty($this->version)) {
+      $url .= 'api/' . $this->version . '/';
+    }
+
+    return $url;
   }
 
   /**
@@ -299,6 +604,7 @@ abstract class Client {
    *   JSON data to parse. Data we be pulled from php://input if not provided.
    * @param string $hmac_header
    *   Shopify HMAC header. Default will be pulled from $_SERVER.
+   *
    * @return object
    *   Shopify webhook data.
    *
@@ -352,29 +658,37 @@ abstract class Client {
    * @return \Generator
    */
   public function getResourcePager($resource, $limit = NULL, array $opts = []) {
-    $current_page = 1;
+    if (isset($opts['query']['limit'])) {
+      $fetch_total = $opts['query']['limit'];
+    }
+
     if (!isset($opts['query']['limit'])) {
       $opts['query']['limit'] = ($limit ?: $this->default_limit);
     }
-    while (TRUE) {
-      $opts['query']['page'] = $current_page;
-      $result = $this->get($resource, $opts);
-      if (empty($result)) {
-        break;
-      }
+
+    if ($opts['query']['limit'] > 250) {
+      // If we are trying to fetch more than 250 items we need to make multiple requests
+      // and not return more than what the original limit was.
+      $opts['query']['limit'] = 250;
+    }
+
+    // Get the first page of results.
+    $result = $this->get($resource, $opts);
+
+    $returned_count = 0;
+
+    while (!empty($result)) {
       foreach (get_object_vars($result) as $resource_name => $results) {
-        if (empty($results)) {
+        if (empty($results) || (isset($fetch_total) && $returned_count >= $fetch_total)) {
           return;
         }
         foreach ($results as $object) {
+          $returned_count++;
           yield $object;
         }
-        if (count($results) < $opts['query']['limit']) {
-          // Passing "page" # to Shopify doesn't always implement pagination.
-          return;
-        }
-        $current_page++;
       }
+      // Get subsequent pages of results.
+      $result = $this->getNextPage();
     }
   }
 
