@@ -22,7 +22,7 @@ class ClientException extends \Exception {
    * @param \Exception|NULL $previous
    * @param \Shopify\Client $client
    */
-  public function __construct($message = "", $code = 0, \Exception $previous = NULL, Client $client) {
+  public function __construct($message = "", $code = 0, \Exception $previous = NULL, Client $client = NULL) {
     $this->client = $client;
     parent::__construct($message, $code, $previous);
   }
