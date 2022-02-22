@@ -36,7 +36,7 @@ abstract class Client {
     'page_info',
     'limit',
     'fields',
-    '_apiFeatures'
+    '_apiFeatures',
   ];
 
   /**
@@ -82,7 +82,7 @@ abstract class Client {
    *
    * @var bool
    */
-  protected static $delay_next_call = FALSE;
+  protected $delay_next_call = FALSE;
 
 
   /**
@@ -211,7 +211,7 @@ abstract class Client {
 
     $opts['headers'] = array_merge($opts['headers'], $this->default_headers);
 
-    if ($this->rate_limit && self::$delay_next_call) {
+    if ($this->rate_limit && $this->delay_next_call) {
       // Sleep a random amount of time to help prevent bucket overflow.
       usleep(rand(3, 10) * 1000000);
     }
@@ -256,10 +256,10 @@ abstract class Client {
     $this->setCallLimitParams();
 
     if ($this->callLimitReached()) {
-      self::$delay_next_call = TRUE;
+      $this->delay_next_call = TRUE;
     }
     else {
-      self::$delay_next_call = FALSE;
+      $this->delay_next_call = FALSE;
     }
 
     return $this->last_response;
@@ -580,7 +580,7 @@ abstract class Client {
    *
    * @return string
    */
-  public function getAPIVersion(){
+  public function getAPIVersion() {
     return $this->version;
   }
 

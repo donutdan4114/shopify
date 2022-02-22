@@ -137,7 +137,9 @@ class PublicApp extends Client {
       return FALSE;
     }
     $this->params = $params;
-    $this->code = $this->params['code'];
+    if (!empty($this->params['code'])) {
+      $this->code = $this->params['code'];
+    }
     return TRUE;
   }
 
