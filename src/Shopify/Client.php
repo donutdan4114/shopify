@@ -576,6 +576,15 @@ abstract class Client {
   }
 
   /**
+   * Get the current API version being used by the Client.
+   *
+   * @return string
+   */
+  public function getAPIVersion(){
+    return $this->version;
+  }
+
+  /**
    * Builds the API URL from the client settings.
    *
    * @return string
